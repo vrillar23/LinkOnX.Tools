@@ -1,0 +1,19 @@
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  font-family: "IBM Plex Sans KR", "Segoe UI", "Noto Sans KR", sans-serif;
+  color: #10222d;
+  background:
+    radial-gradient(circle at 18% 16%, rgba(115, 235, 230, 0.42), transparent 38%),
+    radial-gradient(circle at 81% 22%, rgba(255, 211, 165, 0.42), transparent 42%),
+    linear-gradient(165deg, #eef6f9, #f9f2e8);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
