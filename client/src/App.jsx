@@ -169,7 +169,7 @@ function App() {
         const root = data.tree || null;
         setSelectedFile(data.name || fileName);
         setTreeRoot(root);
-        setExpanded(defaultExpanded(root, 2));
+        setExpanded(defaultExpanded(root, 1));
 
         const map = buildTreeMap(root);
         const targetPath = selectPath(map, preferredPath);
@@ -348,6 +348,44 @@ function App() {
     if (activeModule === "queryDeveloper" && !confirmDiscard()) return;
     setActiveModule(moduleId);
   }, [activeModule, confirmDiscard]);
+
+  const onDownloadSelectedFile = useCallback(async () => {
+    if (!selectedFile) {
+      setBanner("Select a qsf file first.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/qsf/download?name=${encodeURIComponent(selectedFile)}`, {
+        method: "GET",
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        const message = payload?.message || `Download failed: ${response.status}`;
+        throw new Error(message);
+      }
+
+      const blob = await response.blob();
+      const selectedMeta = files.find((file) => file.name === selectedFile);
+      const downloadName = buildQsfDownloadName(
+        selectedMeta?.systemName,
+        parseDownloadFileName(response.headers.get("Content-Disposition")) || selectedFile,
+      );
+      const objectUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = downloadName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 0);
+
+      setBanner(`Downloaded ${downloadName}`);
+    } catch (error) {
+      setBanner(`Download failed: ${error.message}`);
+    }
+  }, [files, selectedFile]);
 
   const onSelectFile = async (fileName) => {
     if (fileName === selectedFile) return;
@@ -739,7 +777,19 @@ function App() {
       ) : (
         <main className="workspace message-like-layout">
           <aside className="panel file-panel">
-            <h2>System</h2>
+            <div className="system-head">
+              <h2>System</h2>
+              <button
+                type="button"
+                className="system-download-btn"
+                onClick={() => void onDownloadSelectedFile()}
+                title="Download selected .qsf"
+                aria-label="Download selected .qsf"
+                disabled={!selectedFile || filesLoading || fileLoading}
+              >
+                <span className="system-download-icon" aria-hidden="true" />
+              </button>
+            </div>
             {files.length === 0 && <p className="empty-text">No systems found.</p>}
             <ul className="file-list">
               {files.map((file) => (
@@ -1400,6 +1450,38 @@ function formatFileSize(size) {
   if (value < 1024) return `${value} B`;
   if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
   return `${(value / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function parseDownloadFileName(contentDisposition) {
+  const header = String(contentDisposition || "");
+  const utf8Match = header.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1]);
+    } catch {
+      // ignore malformed encoding
+    }
+  }
+  const quotedMatch = header.match(/filename="([^"]+)"/i);
+  if (quotedMatch?.[1]) return quotedMatch[1];
+  const plainMatch = header.match(/filename=([^;]+)/i);
+  if (plainMatch?.[1]) return plainMatch[1].trim();
+  return "";
+}
+
+function buildQsfDownloadName(systemName, fallbackName) {
+  const fallbackBase = String(fallbackName || "")
+    .replace(/\.qsf$/i, "")
+    .trim();
+  const preferredBase = String(systemName || "").trim();
+  const rawBase = preferredBase || fallbackBase || "download";
+  const sanitizedBase = rawBase
+    .replace(/[\\/:*?"<>|]/g, "_")
+    .replace(/\s+/g, " ")
+    .replace(/[. ]+$/g, "")
+    .trim();
+  const finalBase = sanitizedBase || fallbackBase || "download";
+  return /\.qsf$/i.test(finalBase) ? finalBase : `${finalBase}.qsf`;
 }
 
 async function apiRequest(url, options = {}) {

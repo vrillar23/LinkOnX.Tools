@@ -17,8 +17,11 @@ const port = Number(process.env.PORT || 3001);
 const clientOrigin = process.env.CLIENT_ORIGIN || "http://localhost:5173";
 const jwtSecret = process.env.JWT_SECRET || "linkonx-tools-dev-secret";
 const authCookieName = "linkonx_qd_session";
-const mssqlConnectionString = String(process.env.MSSQL_CONNECTION_STRING || "").trim();
-const authUserTable = String(process.env.AUTH_USER_TABLE || "").trim();
+const mssqlConnectionString = String(
+  process.env.MSSQL_CONNECTION_STRING ||
+    "Data Source=192.168.0.111,1433;Initial Catalog=LINKON;User ID=linkon;Password=p@ssw0rd!2",
+).trim();
+const authUserTable = String(process.env.AUTH_USER_TABLE || "QSECUSRDEF").trim();
 const qsfRootDir = path.resolve(process.env.QSF_ROOT_DIR || path.join(process.cwd(), "data", "qsf"));
 const securityKey = loadSecurityKey();
 const isProduction = String(process.env.NODE_ENV || "").trim().toLowerCase() === "production";
@@ -214,6 +217,24 @@ app.get("/api/auth/me", requireAuth, (req, res) => {
 app.get("/api/qsf/files", requireAuth, async (_req, res) => {
   const files = await listQsfFiles();
   res.json({ files });
+});
+
+app.get("/api/qsf/download", requireAuth, async (req, res) => {
+  const fileName = safeQsfFileName(req.query.name);
+  if (!fileName) {
+    return res.status(400).json({ message: "Invalid qsf file name." });
+  }
+
+  const fullPath = resolveQsfPath(fileName);
+  const exists = await fileExists(fullPath);
+  if (!exists) {
+    return res.status(404).json({ message: "qsf file not found." });
+  }
+
+  return res.download(fullPath, fileName, (error) => {
+    if (!error || res.headersSent) return;
+    res.status(500).json({ message: "qsf download failed." });
+  });
 });
 
 app.get("/api/qsf/tree", requireAuth, async (req, res) => {
