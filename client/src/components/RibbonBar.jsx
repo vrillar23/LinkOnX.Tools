@@ -12,7 +12,7 @@ export function RibbonBar({ sections, sessionLabel = "", quickActions = [] }) {
   }, [sections]);
 
   const [collapsed, setCollapsed] = useState(initial);
-  const [allCollapsed, setAllCollapsed] = useState(false);
+  const [allCollapsed, setAllCollapsed] = useState(true);
 
   const toggle = (title) => {
     setCollapsed((prev) => ({ ...prev, [title]: !prev[title] }));

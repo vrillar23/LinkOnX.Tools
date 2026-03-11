@@ -51,6 +51,21 @@
   box-sizing: border-box;
 }
 
+.option-grid input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border-radius: 4px;
+}
+
+.option-checkbox-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  color: #334155;
+}
+
 .option-theme-presets {
   display: flex;
   gap: 8px;
@@ -127,6 +142,10 @@ body.app-theme-dark .option-grid select {
   background: #0c172b;
   color: #dbe7ff;
   border-color: #31445f;
+}
+
+body.app-theme-dark .option-checkbox-field {
+  color: #dbe7ff;
 }
 
 body.app-theme-dark .option-theme-btn {

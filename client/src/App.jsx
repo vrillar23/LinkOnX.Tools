@@ -38,6 +38,7 @@ const HOME_SHORTCUT_GROUPS = [
 
 const MAIN_LOGO_SRC = "/linkonx-main-logo.svg";
 const SQL_PROVIDERS = ["MsSql", "Oracle", "MySql", "MariaDb", "PostgreSql", "Machbase", "OleDb", "Influx", "SQLite"];
+const TREE_NODE_DEPTH_INDENT_PX = 10;
 
 function App() {
   const [booting, setBooting] = useState(true);
@@ -56,6 +57,16 @@ function App() {
       return raw === "dark" ? "dark" : "white";
     } catch {
       return "white";
+    }
+  });
+  const [showTreeDepthGuide, setShowTreeDepthGuide] = useState(() => {
+    try {
+      const raw = window.localStorage.getItem("linkon.showTreeDepthGuide");
+      if (raw === "false") return false;
+      if (raw === "true") return true;
+      return true;
+    } catch {
+      return true;
     }
   });
 
@@ -252,6 +263,22 @@ function App() {
       document.body.classList.remove(className);
     };
   }, [themePreset]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("linkon.showTreeDepthGuide", showTreeDepthGuide ? "true" : "false");
+    } catch {
+      // ignore storage failures
+    }
+  }, [showTreeDepthGuide]);
+
+  useEffect(() => {
+    if (!banner) return undefined;
+    const timer = window.setTimeout(() => {
+      setBanner("");
+    }, 3000);
+    return () => window.clearTimeout(timer);
+  }, [banner]);
 
   useEffect(() => {
     setSearchMatches([]);
@@ -596,8 +623,9 @@ function App() {
       "--tree-font-size": `${Math.max(8, Math.min(32, Number(treeFontSize) || 14))}px`,
       "--prop-label-font-family": propFontFamily,
       "--prop-label-font-size": `${Math.max(8, Math.min(32, Number(propFontSize) || 13))}px`,
+      "--tree-depth-guide-opacity": showTreeDepthGuide ? 0.7 : 0,
     }),
-    [treeFontFamily, treeFontSize, propFontFamily, propFontSize],
+    [treeFontFamily, treeFontSize, propFontFamily, propFontSize, showTreeDepthGuide],
   );
 
   if (booting) {
@@ -731,13 +759,13 @@ function App() {
           <section className="panel query-developer-panel">
             <div className="module-head">
               <h2>Query Developer</h2>
-              <p className="subtext">MessageEditor style layout with TreeView and PropertyGrid.</p>
+              <p className="subtext">Edit .qsf files used by the service.</p>
             </div>
 
             <Split
               className="message-editor split split-horizontal qd-split"
               direction="horizontal"
-              sizes={[44, 56]}
+              sizes={[70, 30]}
               minSize={[280, 320]}
               gutterSize={6}
               gutterAlign="center"
@@ -817,7 +845,15 @@ function App() {
                     const isOpen = row.depth === 0 ? true : expanded.has(pathText);
                     const nodeIcon = getQueryDeveloperTreeIcon(row.node.kind);
                     return (
-                      <div key={pathText || row.node.id} className="tree-node" style={{ marginLeft: row.depth * 5 }}>
+                      <div
+                        key={pathText || row.node.id}
+                        className="tree-node"
+                        style={{
+                          "--tree-depth": row.depth,
+                          "--tree-indent-size": `${TREE_NODE_DEPTH_INDENT_PX}px`,
+                          paddingLeft: `${row.depth * TREE_NODE_DEPTH_INDENT_PX}px`,
+                        }}
+                      >
                         <div
                           className={`tree-label ${selected ? "active" : ""}`}
                           data-node-key={pathText}
@@ -1002,6 +1038,7 @@ function App() {
           initialPropFont={propFontFamily}
           initialPropSize={propFontSize}
           initialThemePreset={themePreset}
+          initialShowTreeDepthGuide={showTreeDepthGuide}
           onCancel={() => setShowOption(false)}
           onApply={(vals) => {
             setTreeFontFamily(vals.treeFont);
@@ -1009,6 +1046,7 @@ function App() {
             setPropFontFamily(vals.propFont);
             setPropFontSize(vals.propSize);
             setThemePreset(vals.themePreset);
+            setShowTreeDepthGuide(Boolean(vals.showTreeDepthGuide));
             setShowOption(false);
           }}
         />

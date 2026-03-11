@@ -7,6 +7,7 @@ export function OptionDialog({
   initialPropFont,
   initialPropSize,
   initialThemePreset,
+  initialShowTreeDepthGuide,
   onApply,
   onCancel,
 }) {
@@ -39,6 +40,7 @@ export function OptionDialog({
   const [propFont, setPropFont] = useState(initialPropFont);
   const [propSize, setPropSize] = useState(initialPropSize);
   const [themePreset, setThemePreset] = useState(initialThemePreset);
+  const [showTreeDepthGuide, setShowTreeDepthGuide] = useState(Boolean(initialShowTreeDepthGuide));
 
   const normalizeSize = (raw, fallback) => {
     const parsed = Number(raw);
@@ -104,6 +106,16 @@ export function OptionDialog({
             max={32}
             onChange={(event) => setPropSize(normalizeSize(event.target.value, initialPropSize))}
           />
+
+          <label>Tree Guide Line</label>
+          <label className="option-checkbox-field">
+            <input
+              type="checkbox"
+              checked={showTreeDepthGuide}
+              onChange={(event) => setShowTreeDepthGuide(event.target.checked)}
+            />
+            Show pseudo-element guide
+          </label>
         </div>
 
         <div className="option-actions">
@@ -118,6 +130,7 @@ export function OptionDialog({
                 propFont,
                 propSize: normalizeSize(propSize, initialPropSize),
                 themePreset,
+                showTreeDepthGuide,
               })
             }
           >
