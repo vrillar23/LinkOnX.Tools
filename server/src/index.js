@@ -15,7 +15,7 @@ const app = express();
 
 const port = Number(process.env.PORT || 3001);
 const clientOrigin = process.env.CLIENT_ORIGIN || "http://localhost:5173";
-const jwtSecret = process.env.JWT_SECRET || "linkonx-tools-web-dev-secret";
+const jwtSecret = process.env.JWT_SECRET || "linkonx-tools-dev-secret";
 const authCookieName = "linkonx_qd_session";
 const mssqlConnectionString = String(process.env.MSSQL_CONNECTION_STRING || "").trim();
 const authUserTable = String(process.env.AUTH_USER_TABLE || "").trim();
@@ -82,7 +82,7 @@ app.get("/api/health", async (_req, res) => {
   await pool.request().query("SELECT 1 AS ok");
   res.json({
     ok: true,
-    service: "linkonx-tools-web-api",
+    service: "linkonx-tools-api",
     module: "query-developer",
     storage: "disk-qsf",
     db: "mssql",
@@ -459,9 +459,9 @@ app.use((error, _req, res, _next) => {
 await ensureQsfRootReady();
 
 app.listen(port, () => {
-  console.log(`[LinkOnX.Tools.Web API] listening on http://localhost:${port}`);
-  console.log(`[LinkOnX.Tools.Web API] qsf root: ${qsfRootDir}`);
-  console.log(`[LinkOnX.Tools.Web API] auth table: ${quotedAuthUserTable()}`);
+console.log(`[LinkOnX.Tools API] listening on http://localhost:${port}`);
+console.log(`[LinkOnX.Tools API] qsf root: ${qsfRootDir}`);
+console.log(`[LinkOnX.Tools API] auth table: ${quotedAuthUserTable()}`);
 });
 
 function requireAuth(req, res, next) {

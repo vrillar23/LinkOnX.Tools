@@ -1,5 +1,5 @@
 {
-  "name": "linkonx-tools-web-server",
+  "name": "linkonx-tools-server",
   "private": true,
   "version": "1.0.0",
   "type": "module",

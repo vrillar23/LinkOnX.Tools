@@ -1,6 +1,6 @@
-# LinkOnX.Tools.Web
+# LinkOnX.Tools
 
-`LinkOnX.Tools.Web` includes:
+`LinkOnX.Tools` includes:
 
 - `QueryDeveloper` web UI (`client`)
 - API server with login and qmf file access (`server`)
