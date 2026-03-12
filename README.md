@@ -30,3 +30,55 @@ npm run dev
 - Required environment values are validated by the API server at startup.
 
 On startup, backend ensures required resources and seeds `Sample.QueryDeveloper.qmf` when needed.
+
+## Windows Server Deployment
+
+Use this sequence to deploy the API server on Windows.
+
+### 1. Prepare source and dependencies
+
+```powershell
+cd E:\Temp\LinkOn.Modeler\LinkOnX.Tools
+git pull
+npm.cmd install
+npm.cmd --prefix server install
+```
+
+### 2. Configure environment
+
+Create `server/.env` from `server/.env.example` and set production values:
+
+- `PORT`
+- `CLIENT_ORIGIN`
+- `JWT_SECRET`
+- `MSSQL_CONNECTION_STRING`
+- `AUTH_USER_TABLE`
+- `QSF_ROOT_DIR`
+- `SECURITY_KEY` or `SECURITY_KEY_FILE` (required)
+
+### 3. Validate server build
+
+```powershell
+npm.cmd --prefix server run build
+```
+
+### 4. Start server in production
+
+```powershell
+$env:NODE_ENV="production"
+npm.cmd --prefix server run start
+```
+
+### 5. Health check
+
+```powershell
+Invoke-RestMethod http://localhost:3001/api/health
+```
+
+### Optional: run as background process (PM2)
+
+```powershell
+npm.cmd i -g pm2
+pm2 start npm --name linkonx-tools-server --prefix server -- run start
+pm2 save
+```
