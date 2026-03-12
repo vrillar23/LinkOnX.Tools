@@ -3,6 +3,7 @@ import "./App.css";
 import { RibbonBar } from "./components/RibbonBar";
 import { RibbonIcon } from "./components/RibbonIcon";
 import { OptionDialog } from "./components/OptionDialog";
+import { MenuEditor } from "./menuEditor/MenuEditor";
 import Split from "react-split";
 import { SqlHighlightEditor } from "./queryDeveloper/SqlHighlightEditor";
 import {
@@ -1139,6 +1140,8 @@ function App() {
             ))}
           </div>
         </section>
+      ) : activeModule === "menuEditor" ? (
+        <MenuEditor />
       ) : activeModule !== "queryDeveloper" ? (
         <section className="panel module-placeholder">
           <h2>{activeModuleInfo.label}</h2>

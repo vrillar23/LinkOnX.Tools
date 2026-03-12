@@ -126,10 +126,9 @@ WHERE LTRIM(RTRIM(USER_ID)) = @userId
     return res.status(403).json({ message: "Account expired. Contact administrator." });
   }
 
-  const encryptedInput = encryptLegacyPassword(password, securityKey);
   const dbPassword = String(account.PASSWORD || "").trim();
-  const isMatched =
-    constantTimeEquals(dbPassword, encryptedInput) || constantTimeEquals(dbPassword, password);
+  const decryptedDbPassword = decryptLegacyPassword(dbPassword, securityKey);
+  const isMatched = constantTimeEquals(decryptedDbPassword, password);
 
   if (!isMatched) {
     if (loginRateLimitEnabled) {
@@ -805,6 +804,30 @@ function encryptLegacyPassword(text, key) {
   return cryptorBytes.toString("base64");
 }
 
+function decryptLegacyPassword(cipherText, key) {
+  const encodedText = String(cipherText || "").trim();
+  if (!encodedText) return "";
+  if (!isBase64Text(encodedText)) return "";
+
+  try {
+    const passwordKey = String(key || "");
+    const salt = Buffer.from(String(passwordKey.length), "ascii");
+    const deriver = createPasswordDeriveBytes(passwordKey, salt, "sha1", 100);
+    const secretKey = deriver.getBytes(32);
+    const iv = deriver.getBytes(16);
+
+    const decipher = crypto.createDecipheriv("aes-256-cbc", secretKey, iv);
+    decipher.setAutoPadding(true);
+    const plainBytes = Buffer.concat([
+      decipher.update(Buffer.from(encodedText, "base64")),
+      decipher.final(),
+    ]);
+    return plainBytes.toString("utf8");
+  } catch {
+    return "";
+  }
+}
+
 function createPasswordDeriveBytes(password, salt, hashName, iterations) {
   const passwordBytes = Buffer.from(String(password || ""), "utf8");
   const saltBytes = salt ? Buffer.from(salt) : null;
@@ -921,21 +944,28 @@ function constantTimeEquals(left, right) {
 }
 
 function loadSecurityKey() {
-  const fromEnv = String(process.env.SECURITY_KEY || "").trim();
-  if (fromEnv) return fromEnv;
-
   const keyFile = String(process.env.SECURITY_KEY_FILE || "").trim();
-  if (keyFile) {
-    try {
-      const raw = fs.readFileSync(keyFile, "utf8");
-      const loaded = String(raw || "").trim();
-      if (loaded) return loaded;
-    } catch (error) {
-      throw new Error(`SECURITY_KEY_FILE read failed: ${error.message}`);
-    }
+  if (!keyFile) {
+    throw new Error("Missing SECURITY_KEY_FILE. Set SECURITY_KEY_FILE to the key file path.");
   }
 
-  throw new Error("Missing security key. Set SECURITY_KEY or SECURITY_KEY_FILE.");
+  try {
+    const raw = fs.readFileSync(keyFile, "utf8");
+    const loaded = String(raw || "").trim();
+    if (loaded) return loaded;
+    throw new Error("Security key file is empty.");
+  } catch (error) {
+    if (error instanceof Error && error.message === "Security key file is empty.") {
+      throw error;
+    }
+    throw new Error(`SECURITY_KEY_FILE read failed: ${error.message}`);
+  }
+}
+
+function isBase64Text(value) {
+  const text = String(value || "").trim();
+  if (!text || text.length % 4 !== 0) return false;
+  return /^[A-Za-z0-9+/]+={0,2}$/.test(text);
 }
 
 function loadEnvFiles(filePaths) {

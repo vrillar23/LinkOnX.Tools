@@ -54,7 +54,7 @@ Create `server/.env` from `server/.env.example` and set production values:
 - `MSSQL_CONNECTION_STRING`
 - `AUTH_USER_TABLE`
 - `QSF_ROOT_DIR`
-- `SECURITY_KEY` or `SECURITY_KEY_FILE` (required)
+- `SECURITY_KEY_FILE` (required)
 
 ### 3. Validate server build
 
