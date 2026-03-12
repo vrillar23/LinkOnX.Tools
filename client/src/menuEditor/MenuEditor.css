@@ -1,7 +1,7 @@
 .MenuEditor-current-file-wrap {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 0.7rem;
   border: 1px solid var(--surface-border);
   border-radius: 12px;
@@ -47,12 +47,24 @@
   letter-spacing: 0.01em;
 }
 
-.MenuEditor-current-file-open-btn {
-  width: 34px;
-  height: 34px;
+.MenuEditor-file-actions-wrap {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 0.05rem;
+}
+
+.MenuEditor-file-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.MenuEditor-file-action-btn {
+  width: 36px;
+  height: 36px;
   border-radius: 8px;
   border: 1px solid #c6d4e5;
-  background: #ffffff;
+  background: linear-gradient(180deg, #ffffff, #f3f7fd);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -60,14 +72,23 @@
   flex: 0 0 auto;
 }
 
-.MenuEditor-current-file-open-btn img {
+.MenuEditor-file-action-btn img {
   width: 16px;
   height: 16px;
   object-fit: contain;
 }
 
-.MenuEditor-current-file-open-btn:hover {
+.MenuEditor-file-action-btn:hover:not(:disabled) {
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+}
+
+.MenuEditor-file-action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.MenuEditor-inline-error {
+  margin: 0;
 }
 
 .MenuEditor-panel {
@@ -86,20 +107,6 @@
 .MenuEditor-title-wrap .subtext {
   margin: 0.45rem 0 0;
   text-align: center;
-}
-
-.MenuEditor-actions {
-  display: flex;
-  justify-content: center;
-}
-
-.MenuEditor-open-btn {
-  font-size: 1rem;
-  padding: 0.72rem 1.25rem;
-  background: linear-gradient(145deg, #3b82f6, #2563eb);
-  border-color: #1d4ed8;
-  color: #eff6ff;
-  font-weight: 700;
 }
 
 .MenuEditor-bottom {
@@ -369,9 +376,13 @@ body.app-theme-dark .MenuEditor-current-file-pill {
   border-color: #475569;
 }
 
-body.app-theme-dark .MenuEditor-current-file-open-btn {
+body.app-theme-dark .MenuEditor-file-action-btn {
   border-color: #4b5f80;
   background: #15253f;
+}
+
+body.app-theme-dark .MenuEditor-file-action-btn:hover:not(:disabled) {
+  box-shadow: 0 8px 18px rgba(4, 8, 18, 0.45);
 }
 
 body.app-theme-dark .MenuEditor-tree-panel,

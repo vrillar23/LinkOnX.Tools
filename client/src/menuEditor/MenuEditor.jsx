@@ -76,15 +76,21 @@ const TREE_ICON_MAP = {
   MIT: "/icons/menuEditor/ToolMenuItem.png",
   PIT: "/icons/menuEditor/ToolMenuPopupItem.png",
 };
+const NEW_ICON_SRC = "/icons/menuEditor/new_16x16.png";
 const OPEN_ICON_SRC = "/icons/menuEditor/open_16x16.png";
+const SAVE_ICON_SRC = "/icons/menuEditor/save_16x16.png";
 const FALLBACK_MENU_ITEM_ICON = "/icons/menuEditor/ToolMenuItem.png";
 const FALLBACK_MENU_GROUP_ICON = "/icons/menuEditor/ToolMenuGroup.png";
 const FALLBACK_MENU_GROUP_SUB_ICON = "/icons/menuEditor/ToolMenuGroupSub.png";
+const ROOT_META_ORDER = ["QF", "QV", "QC", "QU", "QD", "QS"];
 
 export function MenuEditor() {
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [fileHandle, setFileHandle] = useState(null);
+  const [menuMeta, setMenuMeta] = useState(() => createDefaultMenuMeta(new Date()));
+  const [isDirty, setIsDirty] = useState(false);
   const [errorText, setErrorText] = useState("");
   const [treeRoot, setTreeRoot] = useState(null);
   const [selectedNodeId, setSelectedNodeId] = useState("");
@@ -108,44 +114,88 @@ export function MenuEditor() {
     [propertyRows],
   );
 
-  const onOpenMenuFile = useCallback(() => {
-    const input = fileInputRef.current;
-    if (!input) return;
-    input.value = "";
-    input.click();
-  }, []);
-
-  const onPickFile = useCallback(async (event) => {
-    const file = event.target?.files?.[0];
+  const onLoadMenuFile = useCallback(async (file, nextHandle = null) => {
     if (!file) return;
 
     if (!/\.mnu$/i.test(String(file.name || ""))) {
       setSelectedFile(null);
+      setFileHandle(null);
       setTreeRoot(null);
       setSelectedNodeId("");
       setExpandedNodeIds(new Set());
+      setIsDirty(false);
       setErrorText("Please select a file with the .mnu extension.");
       return;
     }
 
     try {
       const text = await file.text();
-      const parsedRoot = parseMenuTree(text);
+      const parsed = parseMenuTree(text);
       setSelectedFile({
-        name: String(file.name || ""),
+        name: String(file.name || "LinkOnMenu.mnu"),
       });
-      setTreeRoot(parsedRoot);
-      setSelectedNodeId(parsedRoot.id);
-      setExpandedNodeIds(defaultExpandedNodes(parsedRoot, 1));
+      setFileHandle(nextHandle);
+      setTreeRoot(parsed.tree);
+      setMenuMeta(parsed.meta);
+      setSelectedNodeId(parsed.tree.id);
+      setExpandedNodeIds(defaultExpandedNodes(parsed.tree, 1));
+      setIsDirty(false);
       setErrorText("");
     } catch (error) {
       setSelectedFile(null);
+      setFileHandle(null);
       setTreeRoot(null);
       setSelectedNodeId("");
       setExpandedNodeIds(new Set());
+      setIsDirty(false);
       setErrorText(error instanceof Error ? error.message : "Failed to parse .mnu file.");
     }
   }, []);
+
+  const onCreateMenuFile = useCallback(() => {
+    const tree = createDefaultMenuTree();
+    setSelectedFile({ name: "LinkOnMenu.mnu" });
+    setFileHandle(null);
+    setTreeRoot(tree);
+    setMenuMeta(createDefaultMenuMeta(new Date()));
+    setSelectedNodeId(tree.id);
+    setExpandedNodeIds(defaultExpandedNodes(tree, 1));
+    setIsDirty(true);
+    setErrorText("");
+  }, []);
+
+  const onOpenMenuFile = useCallback(async () => {
+    if (supportsFileSystemAccess()) {
+      try {
+        const [handle] = await window.showOpenFilePicker({
+          multiple: false,
+          excludeAcceptAllOption: true,
+          types: [{
+            description: "Menu Files",
+            accept: { "application/xml": [".mnu"] },
+          }],
+        });
+        if (!handle) return;
+        const file = await handle.getFile();
+        await onLoadMenuFile(file, handle);
+      } catch (error) {
+        if (isAbortError(error)) return;
+        setErrorText(error instanceof Error ? error.message : "Failed to open .mnu file.");
+      }
+      return;
+    }
+
+    const input = fileInputRef.current;
+    if (!input) return;
+    input.value = "";
+    input.click();
+  }, [onLoadMenuFile]);
+
+  const onPickFile = useCallback(async (event) => {
+    const file = event.target?.files?.[0];
+    if (!file) return;
+    await onLoadMenuFile(file, null);
+  }, [onLoadMenuFile]);
 
   const onToggleNode = useCallback((nodeId) => {
     setExpandedNodeIds((prev) => {
@@ -166,6 +216,7 @@ export function MenuEditor() {
         [row.key]: value,
       },
     })));
+    setIsDirty(true);
   }, [selectedNodeId]);
 
   const onOpenImagePicker = useCallback((attributeKey) => {
@@ -201,11 +252,52 @@ export function MenuEditor() {
           [targetKey]: hex,
         },
       })));
+      setIsDirty(true);
       setErrorText("");
     } catch {
       setErrorText("Failed to load selected image.");
     }
   }, [pendingImageKey, selectedNodeId]);
+
+  const onSaveMenuFile = useCallback(async () => {
+    if (!treeRoot) return;
+
+    try {
+      const built = buildMenuXml(treeRoot, menuMeta);
+      let nextHandle = fileHandle;
+      let nextFileName = String(selectedFile?.name || "LinkOnMenu.mnu");
+
+      if (supportsFileSystemAccess()) {
+        if (!nextHandle) {
+          nextHandle = await window.showSaveFilePicker({
+            suggestedName: nextFileName,
+            excludeAcceptAllOption: true,
+            types: [{
+              description: "Menu Files",
+              accept: { "application/xml": [".mnu"] },
+            }],
+          });
+        }
+
+        const writable = await nextHandle.createWritable();
+        await writable.write(built.xmlText);
+        await writable.close();
+
+        nextFileName = String(nextHandle.name || nextFileName);
+        setFileHandle(nextHandle);
+      } else {
+        downloadTextFile(nextFileName, built.xmlText);
+      }
+
+      setMenuMeta(built.meta);
+      setSelectedFile({ name: nextFileName });
+      setIsDirty(false);
+      setErrorText("");
+    } catch (error) {
+      if (isAbortError(error)) return;
+      setErrorText(error instanceof Error ? error.message : "Failed to save .mnu file.");
+    }
+  }, [treeRoot, menuMeta, fileHandle, selectedFile]);
 
   return (
     <>
@@ -235,33 +327,54 @@ export function MenuEditor() {
             <span className="MenuEditor-current-file-label">Current File :</span>
             <strong className="MenuEditor-current-file-name">{selectedFile.name}</strong>
           </div>
-          <button
-            type="button"
-            className="MenuEditor-current-file-open-btn"
-            onClick={onOpenMenuFile}
-            title="Open .mnu file"
-            aria-label="Open .mnu file"
-          >
-            <img src={OPEN_ICON_SRC} alt="" />
-          </button>
         </div>
       ) : null}
 
       <section className="panel MenuEditor-panel">
+        <div className="MenuEditor-file-actions-wrap">
+          <div className="MenuEditor-file-actions">
+            <button
+              type="button"
+              className="MenuEditor-file-action-btn"
+              onClick={onCreateMenuFile}
+              title="New .mnu file"
+              aria-label="New .mnu file"
+            >
+              <img src={NEW_ICON_SRC} alt="" />
+            </button>
+            <button
+              type="button"
+              className="MenuEditor-file-action-btn"
+              onClick={() => {
+                void onOpenMenuFile();
+              }}
+              title="Open .mnu file"
+              aria-label="Open .mnu file"
+            >
+              <img src={OPEN_ICON_SRC} alt="" />
+            </button>
+            <button
+              type="button"
+              className="MenuEditor-file-action-btn"
+              onClick={() => {
+                void onSaveMenuFile();
+              }}
+              title="Save .mnu file"
+              aria-label="Save .mnu file"
+              disabled={!treeRoot || !isDirty}
+            >
+              <img src={SAVE_ICON_SRC} alt="" />
+            </button>
+          </div>
+        </div>
+        {errorText ? <p className="error-text MenuEditor-inline-error">{errorText}</p> : null}
+
         {!treeRoot ? (
           <div className="MenuEditor-bottom">
             <div className="MenuEditor-title-wrap">
               <h2>Menu Editor</h2>
               <p className="subtext">Open a local .mnu file to start menu editing.</p>
             </div>
-
-            <div className="MenuEditor-actions">
-              <button type="button" className="primary-btn MenuEditor-open-btn" onClick={onOpenMenuFile}>
-                Open .mnu File
-              </button>
-            </div>
-
-            {errorText ? <p className="error-text">{errorText}</p> : null}
 
             {!selectedFile ? (
               <p className="empty-text">No .mnu file selected yet.</p>
@@ -408,7 +521,9 @@ function parseMenuTree(xmlText) {
     throw new Error("MNU node not found in selected file.");
   }
 
-  return parseTreeNode(mnuElement, "mnu");
+  const tree = parseTreeNode(mnuElement, "mnu");
+  const meta = normalizeMenuMeta(extractElementAttributes(root), tree);
+  return { tree, meta };
 }
 
 function parseTreeNode(element, id) {
@@ -690,4 +805,163 @@ function uint8ToBase64(bytes) {
 function arrayBufferToHexString(buffer) {
   const bytes = new Uint8Array(buffer);
   return Array.from(bytes, (value) => value.toString(16).padStart(2, "0").toUpperCase()).join(" ");
+}
+
+function supportsFileSystemAccess() {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.showOpenFilePicker === "function" &&
+    typeof window.showSaveFilePicker === "function"
+  );
+}
+
+function isAbortError(error) {
+  return error && String(error?.name || "") === "AbortError";
+}
+
+function createDefaultMenuTree() {
+  return {
+    id: "mnu",
+    tag: "MNU",
+    attributes: {
+      _S: "1",
+      NM: "LinkOnMenu",
+    },
+    children: [],
+  };
+}
+
+function createDefaultMenuMeta(now) {
+  const timestamp = formatMenuTimestamp(now || new Date());
+  return {
+    QF: "MNU",
+    QV: "1.0.0.0",
+    QC: timestamp,
+    QU: timestamp,
+    QD: "LinkOn Menu File",
+    QS: "1",
+  };
+}
+
+function normalizeMenuMeta(meta, treeRoot) {
+  const defaults = createDefaultMenuMeta(new Date());
+  const next = { ...defaults };
+  for (const key of ROOT_META_ORDER) {
+    const text = String(meta?.[key] ?? "").trim();
+    if (text) next[key] = text;
+  }
+
+  const parsedSeq = Number.parseInt(String(next.QS || "0"), 10);
+  const currentSeq = Number.isFinite(parsedSeq) ? parsedSeq : 0;
+  const maxSeq = findMaxSequenceId(treeRoot);
+  next.QS = String(Math.max(1, currentSeq, maxSeq));
+  return next;
+}
+
+function extractElementAttributes(element) {
+  const attributes = {};
+  for (const attr of Array.from(element?.attributes || [])) {
+    attributes[attr.name] = String(attr.value ?? "");
+  }
+  return attributes;
+}
+
+function findMaxSequenceId(root) {
+  let maxSeq = 0;
+  const walk = (node) => {
+    if (!node) return;
+    const parsed = Number.parseInt(String(node?.attributes?._S ?? ""), 10);
+    if (Number.isFinite(parsed)) {
+      maxSeq = Math.max(maxSeq, parsed);
+    }
+    for (const child of node.children || []) {
+      walk(child);
+    }
+  };
+  walk(root);
+  return maxSeq;
+}
+
+function formatMenuTimestamp(dateLike) {
+  const date = dateLike instanceof Date ? dateLike : new Date(dateLike);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hour = String(date.getHours()).padStart(2, "0");
+  const minute = String(date.getMinutes()).padStart(2, "0");
+  const second = String(date.getSeconds()).padStart(2, "0");
+  const millisecond = String(date.getMilliseconds()).padStart(3, "0");
+  return `${year}-${month}-${day} ${hour}:${minute}:${second}.${millisecond}`;
+}
+
+function buildMenuXml(treeRoot, menuMeta) {
+  const nextMeta = normalizeMenuMeta({
+    ...(menuMeta || {}),
+    QU: formatMenuTimestamp(new Date()),
+  }, treeRoot);
+  if (!String(nextMeta.QC || "").trim()) {
+    nextMeta.QC = nextMeta.QU;
+  }
+
+  const rootAttributes = ROOT_META_ORDER
+    .map((key) => `${key}="${escapeXmlAttribute(nextMeta[key])}"`)
+    .join(" ");
+
+  const lines = [
+    "<?xml version=\"1.0\"?>",
+    `<Q ${rootAttributes}>`,
+    ...renderMenuTreeXml(treeRoot, 1),
+    "</Q>",
+  ];
+
+  return {
+    xmlText: lines.join("\n"),
+    meta: nextMeta,
+  };
+}
+
+function renderMenuTreeXml(node, depth) {
+  if (!node) return [];
+
+  const indent = "  ".repeat(Math.max(0, depth));
+  const entries = Object.entries(node.attributes || {})
+    .filter(([key]) => Boolean(String(key || "").trim()))
+    .sort(([left], [right]) => compareAttributeKey(left, right));
+  const attributesText = entries
+    .map(([key, value]) => `${key}="${escapeXmlAttribute(String(value ?? ""))}"`)
+    .join(" ");
+  const children = node.children || [];
+  if (!children.length) {
+    return [`${indent}<${node.tag}${attributesText ? ` ${attributesText}` : ""} />`];
+  }
+
+  const lines = [`${indent}<${node.tag}${attributesText ? ` ${attributesText}` : ""}>`];
+  for (const child of children) {
+    lines.push(...renderMenuTreeXml(child, depth + 1));
+  }
+  lines.push(`${indent}</${node.tag}>`);
+  return lines;
+}
+
+function escapeXmlAttribute(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function downloadTextFile(fileName, text) {
+  const safeName = /\.mnu$/i.test(String(fileName || "")) ? String(fileName) : `${String(fileName || "LinkOnMenu")}.mnu`;
+  const blob = new Blob([String(text ?? "")], {
+    type: "application/xml;charset=utf-8",
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = safeName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
 }
