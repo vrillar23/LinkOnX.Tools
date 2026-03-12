@@ -4,28 +4,22 @@ import { RibbonBar } from "./components/RibbonBar";
 import { RibbonIcon } from "./components/RibbonIcon";
 import { OptionDialog } from "./components/OptionDialog";
 import { MenuEditor } from "./menuEditor/MenuEditor";
-import Split from "react-split";
-import { SqlHighlightEditor } from "./queryDeveloper/SqlHighlightEditor";
+import { QueryDeveloperPanel } from "./queryDeveloper/QueryDeveloperPanel";
 import {
-  CONTEXT_ALLOWED_CHILDREN,
   SQL_PROVIDERS,
   TREE_ACTION_ENDPOINTS,
-  TREE_NODE_DEPTH_INDENT_PX,
 } from "./queryDeveloper/constants";
 import {
   applySavedPropertyToDetail,
   applySavedPropertyToTree,
+  buildClientPath,
   buildTreeClipboardKey,
-  boolToSelectValue,
   buildQsfDownloadName,
   buildTreeMap,
   defaultExpanded,
   expandPath,
   findTreeMatches,
   flattenVisible,
-  getQueryDeveloperTreeIcon,
-  getSqlProviderLogoSrc,
-  getSqlProviderMonogram,
   groupProperties,
   isAlwaysReadOnlyProperty,
   normalizeBoolValue,
@@ -62,7 +56,7 @@ const HOME_SHORTCUT_GROUPS = [
   { title: "Development", items: DEVELOPMENT_SHORTCUTS },
 ];
 
-const MAIN_LOGO_SRC = "/linkonx-main-logo.svg";
+const MAIN_LOGO_SRC = buildClientPath("linkonx-main-logo.svg");
 const AUTO_LOGOUT_IDLE_MS = 10 * 60 * 1000;
 const LOGIN_REMEMBER_KEY = "linkon.login.remember";
 const LOGIN_REMEMBER_FACTORY_KEY = "linkon.login.factory";
@@ -505,7 +499,7 @@ function App() {
     }
 
     try {
-      const response = await fetch(`/api/qsf/download?name=${encodeURIComponent(selectedFile)}`, {
+      const response = await fetch(resolveRequestUrl(`/api/qsf/download?name=${encodeURIComponent(selectedFile)}`), {
         method: "GET",
         credentials: "include",
       });
@@ -607,6 +601,10 @@ function App() {
         initDrafts(null);
       }
       if (action === "appendModule") setBanner("A new module was appended.");
+      else if (action === "appendFunction") setBanner("A new function was appended.");
+      else if (action === "appendSqlGroup") setBanner("A new SQL code was appended.");
+      else if (action === "insertBeforeNode") setBanner("A new node was inserted before.");
+      else if (action === "insertAfterNode") setBanner("A new node was inserted after.");
       else if (action === "deleteNode") setBanner("The node was deleted.");
       else if (action === "pasteNode") setBanner("The copied node was pasted.");
     } catch (error) {
@@ -702,11 +700,35 @@ function App() {
     }
 
     if (action === "appendChild") {
-      if (node.kind !== "system") {
+      const appendActionByKind = {
+        system: "appendModule",
+        module: "appendFunction",
+        function: "appendSqlGroup",
+      };
+      const appendAction = appendActionByKind[node.kind];
+      if (!appendAction) {
         setContextMenu(null);
         return;
       }
-      await onRunTreeMutation("appendModule", pathText);
+      await onRunTreeMutation(appendAction, pathText);
+      return;
+    }
+
+    if (action === "insertBefore") {
+      if (!["module", "function", "sqlGroup"].includes(node.kind)) {
+        setContextMenu(null);
+        return;
+      }
+      await onRunTreeMutation("insertBeforeNode", pathText);
+      return;
+    }
+
+    if (action === "insertAfter") {
+      if (!["module", "function", "sqlGroup"].includes(node.kind)) {
+        setContextMenu(null);
+        return;
+      }
+      await onRunTreeMutation("insertAfterNode", pathText);
     }
   }, [contextMenu, expanded, onRunTreeMutation, selectedFile, treeClipboard, treeMap]);
 
@@ -1052,60 +1074,6 @@ function App() {
       <RibbonBar sections={ribbonSections} sessionLabel={sessionLabel} quickActions={ribbonQuickActions} />
 
       {banner && <div className="banner">{banner}</div>}
-      {contextMenu && contextNode && (
-        <div
-          ref={contextMenuRef}
-          className="tree-context-menu"
-          style={{
-            left: `${contextMenu.x}px`,
-            top: `${contextMenu.y}px`,
-          }}
-        >
-          {(() => {
-            const hasChildren = (contextNode.children || []).length > 0;
-            const pathText = contextMenu.pathText;
-            const isOpen = pathText === "root" ? true : expanded.has(pathText);
-            const allowedPasteKinds = CONTEXT_ALLOWED_CHILDREN[contextNode.kind] || [];
-            const canPaste = Boolean(
-              treeClipboard &&
-              treeClipboard.fileName === selectedFile &&
-              allowedPasteKinds.includes(treeClipboard.kind),
-            );
-            const canDelete = contextNode.kind !== "root" && !hasChildren;
-            return (
-              <>
-                <button type="button" onClick={() => void onTreeContextAction("expand")} disabled={!hasChildren || isOpen}>
-                  Expand
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void onTreeContextAction("collapse")}
-                  disabled={!hasChildren || !isOpen || pathText === "root"}
-                >
-                  Collapse
-                </button>
-                <button type="button" onClick={() => void onTreeContextAction("copy")} disabled={contextNode.kind === "root"}>
-                  Copy
-                </button>
-                <button type="button" onClick={() => void onTreeContextAction("paste")} disabled={!canPaste}>
-                  Paste
-                </button>
-                <button type="button" onClick={() => void onTreeContextAction("delete")} disabled={!canDelete}>
-                  Delete
-                </button>
-                {contextNode.kind === "system" && (
-                  <>
-                    <span className="tree-context-separator" role="separator" />
-                    <button type="button" onClick={() => void onTreeContextAction("appendChild")}>
-                      Append Child
-                    </button>
-                  </>
-                )}
-              </>
-            );
-          })()}
-        </div>
-      )}
 
       {activeModule === "home" ? (
         <section className="panel home-panel">
@@ -1148,311 +1116,51 @@ function App() {
           <p className="subtext">This module page will be connected in the next step.</p>
         </section>
       ) : (
-        <main className="workspace message-like-layout">
-          <aside className="panel file-panel">
-            <div className="system-head">
-              <h2>System</h2>
-              <button
-                type="button"
-                className="system-download-btn"
-                onClick={() => void onDownloadSelectedFile()}
-                title="Download selected .qsf"
-                aria-label="Download selected .qsf"
-                disabled={!selectedFile || filesLoading || fileLoading}
-              >
-                <span className="system-download-icon" aria-hidden="true" />
-              </button>
-            </div>
-            {files.length === 0 && <p className="empty-text">No systems found.</p>}
-            <ul className="file-list">
-              {files.map((file) => (
-                <li key={file.name}>
-                  <button type="button" className={selectedFile === file.name ? "active" : ""} onClick={() => void onSelectFile(file.name)}>
-                    <span className="system-file-name">
-                      <img src="/icons/SqlSystem.png" alt="" className="system-file-icon" />
-                      {file.systemName || file.name}
-                    </span>
-                    <small>{file.name} | {formatFileSize(file.size)} | {formatDate(file.modifiedAt)}</small>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </aside>
-
-          <section className="panel query-developer-panel">
-            <div className="module-head">
-              <h2>Query Developer</h2>
-              <p className="subtext">Edit .qsf files used by the service.</p>
-            </div>
-
-            <Split
-              className="message-editor split split-horizontal qd-split"
-              direction="horizontal"
-              sizes={[70, 30]}
-              minSize={[280, 320]}
-              gutterSize={6}
-              gutterAlign="center"
-            >
-              <div ref={treePaneRef} className="message-list qd-tree-pane">
-                <div className={`tree-search ${searchCollapsed ? "collapsed" : "expanded"}`}>
-                  <button
-                    type="button"
-                    className="tree-search-icon-btn tree-search-toggle"
-                    onClick={() => setSearchCollapsed((prev) => !prev)}
-                    title={searchCollapsed ? "Expand search" : "Collapse search"}
-                    aria-label={searchCollapsed ? "Expand search" : "Collapse search"}
-                  >
-                    <span className="tree-search-icon tree-search-icon-magnify" aria-hidden="true" />
-                  </button>
-
-                  {!searchCollapsed && (
-                    <div className="tree-search-panel">
-                      <input
-                        value={searchQuery}
-                        placeholder="Search Name / Description"
-                        aria-label="Search Query Developer tree"
-                        onChange={(event) => setSearchQuery(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            event.preventDefault();
-                            void onSearch();
-                          }
-                        }}
-                      />
-                      <button
-                        type="button"
-                        className={`tree-search-icon-btn tree-search-case ${searchCaseSensitive ? "active" : ""}`}
-                        onClick={() => setSearchCaseSensitive((prev) => !prev)}
-                        title={searchCaseSensitive ? "Case sensitive on" : "Case sensitive off"}
-                        aria-label="Toggle case sensitive search"
-                        aria-pressed={searchCaseSensitive}
-                      >
-                        <span className="tree-search-case-label" aria-hidden="true">Aa</span>
-                      </button>
-                      <button type="button" className="tree-search-icon-btn" onClick={() => void onSearch()} title="Search" aria-label="Search">
-                        <span className="tree-search-icon tree-search-icon-magnify" aria-hidden="true" />
-                      </button>
-                      <span className="tree-search-count" title={`${searchMatches.length} matched nodes`}>
-                        {currentSearchDisplay}/{searchMatches.length}
-                      </span>
-                      <button
-                        type="button"
-                        className="tree-search-icon-btn"
-                        onClick={() => void moveSearch(-1)}
-                        disabled={!searchMatches.length}
-                        title="Previous match"
-                        aria-label="Previous match"
-                      >
-                        <span className="tree-search-icon tree-search-icon-up" aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        className="tree-search-icon-btn"
-                        onClick={() => void moveSearch(1)}
-                        disabled={!searchMatches.length}
-                        title="Next match"
-                        aria-label="Next match"
-                      >
-                        <span className="tree-search-icon tree-search-icon-down" aria-hidden="true" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                <div className="tree">
-                  {treeRows.length === 0 && <p className="empty-text">Select a qsf file to load TreeView.</p>}
-                  {treeRows.map((row) => {
-                    const pathText = row.node.locator?.pathText || "";
-                    const selected = pathText === selectedPath;
-                    const hasChildren = (row.node.children || []).length > 0;
-                    const isOpen = row.depth === 0 ? true : expanded.has(pathText);
-                    const nodeIcon = getQueryDeveloperTreeIcon(row.node.kind);
-                    return (
-                      <div
-                        key={pathText || row.node.id}
-                        className="tree-node"
-                        style={{
-                          "--tree-depth": row.depth,
-                          "--tree-indent-size": `${TREE_NODE_DEPTH_INDENT_PX}px`,
-                          paddingLeft: `${row.depth * TREE_NODE_DEPTH_INDENT_PX}px`,
-                        }}
-                      >
-                        <div
-                          className={`tree-label ${selected ? "active" : ""}`}
-                          data-node-key={pathText}
-                          onClick={() => {
-                            void onSelectNode(pathText);
-                          }}
-                          onContextMenu={(event) => onOpenContextMenu(event, pathText)}
-                          onDoubleClick={(event) => {
-                            if (!hasChildren) return;
-                            const target = event.target;
-                            if (target instanceof Element && target.closest(".tree-toggle")) return;
-                            toggleNodeExpanded(pathText);
-                          }}
-                        >
-                          {hasChildren ? (
-                            <button
-                              type="button"
-                              className="tree-toggle"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                toggleNodeExpanded(pathText);
-                              }}
-                            >
-                              {isOpen ? "\u25BE" : "\u25B8"}
-                            </button>
-                          ) : (
-                            <span className="tree-toggle spacer" />
-                          )}
-                          {nodeIcon ? <img src={nodeIcon} alt={row.node.tag || row.node.kind || ""} className="node-icon" /> : null}
-                          <span className="tag">{row.node.label}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="msg-form qd-detail-pane">
-                <div className="qd-detail-grid">
-                  <section className="qd-prop-grid">
-                    <div className="qd-prop-head">
-                      <h4>Properties</h4>
-                      <div className="qd-prop-head-actions">
-                        <button
-                          type="button"
-                          className="prop-update-btn"
-                          onClick={() => void onUpdateProperties()}
-                          title="Update"
-                          aria-label="Update"
-                          disabled={saving || fileLoading || !propertyDirty || !nodeDetail || nodeDetail.kind === "root"}
-                        >
-                          <span className="prop-update-icon" aria-hidden="true" />
-                        </button>
-                        <button
-                          type="button"
-                          className="prop-update-btn prop-toggle-btn"
-                          onClick={() => setPropertiesCollapsed((prev) => !prev)}
-                          title={propertiesCollapsed ? "Expand properties" : "Collapse properties"}
-                          aria-label={propertiesCollapsed ? "Expand properties" : "Collapse properties"}
-                          aria-expanded={!propertiesCollapsed}
-                        >
-                          <span
-                            className={`prop-toggle-icon ${propertiesCollapsed ? "collapsed" : "expanded"}`}
-                            aria-hidden="true"
-                          />
-                        </button>
-                      </div>
-                    </div>
-                    {propertiesCollapsed ? null : !nodeDetail || !(nodeDetail.properties || []).length ? (
-                      <p className="empty-text">No editable properties for this node.</p>
-                    ) : (
-                      <div className="prop-grid">
-                        {propertyGroups.map((group) => (
-                          <div key={group.category}>
-                            <div className="prop-category">{group.category}</div>
-                            {group.items.map((prop) => (
-                              <div className="prop-row" key={prop.key}>
-                                <label>{prop.label}</label>
-                                {(() => {
-                                  const readOnly = isAlwaysReadOnlyProperty(prop);
-                                  if (prop.type === "enum") {
-                                    return (
-                                      <select
-                                        value={String(propertyDraft[prop.key] ?? prop.value ?? "")}
-                                        onChange={(event) => onChangeProperty(prop, event.target.value)}
-                                        disabled={readOnly || fileLoading || saving}
-                                      >
-                                        {(prop.options || []).map((option) => (
-                                          <option key={option} value={option}>{option}</option>
-                                        ))}
-                                      </select>
-                                    );
-                                  }
-                                  if (prop.type === "bool") {
-                                    return (
-                                      <select
-                                        value={boolToSelectValue(propertyDraft[prop.key] ?? prop.value)}
-                                        onChange={(event) => onChangeProperty(prop, event.target.value)}
-                                        disabled={readOnly || fileLoading || saving}
-                                      >
-                                        <option value="true">True</option>
-                                        <option value="false">False</option>
-                                      </select>
-                                    );
-                                  }
-                                  return (
-                                    <input
-                                      value={String(propertyDraft[prop.key] ?? prop.value ?? "")}
-                                      onChange={(event) => onChangeProperty(prop, event.target.value)}
-                                      readOnly={readOnly}
-                                      disabled={fileLoading || saving}
-                                    />
-                                  );
-                                })()}
-                              </div>
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </section>
-
-                  <section className="qd-sql-editor">
-                    <h4>SQL Editor</h4>
-                    {nodeDetail?.kind !== "sqlGroup" ? (
-                      <p className="empty-text">Select an SQL Code node(SG) to edit provider queries.</p>
-                    ) : (
-                      <>
-                        <div className="sql-tab-row">
-                          <button
-                            type="button"
-                            className="prop-update-btn sql-update-btn"
-                            onClick={() => void onUpdateSqlQueries()}
-                            title="Update"
-                            aria-label="Update"
-                            disabled={saving || fileLoading || !sqlDirty || nodeDetail?.kind !== "sqlGroup"}
-                          >
-                            <span className="prop-update-icon" aria-hidden="true" />
-                          </button>
-                          <span className="sql-tab-separator" role="separator" aria-orientation="vertical" />
-                          {SQL_PROVIDERS.map((provider) => (
-                            (() => {
-                              const logoSrc = getSqlProviderLogoSrc(provider);
-                              return (
-                                <button
-                                  key={provider}
-                                  type="button"
-                                  className={`sql-tab-btn sql-tab-icon-btn ${activeSqlProvider === provider ? "active" : ""}`}
-                                  onClick={() => setActiveSqlProvider(provider)}
-                                  title={provider}
-                                  aria-label={provider}
-                                >
-                                  <span className="sql-provider-icon" aria-hidden="true">
-                                    {logoSrc ? (
-                                      <img src={logoSrc} alt="" className="sql-provider-logo" />
-                                    ) : (
-                                      <span className="sql-provider-fallback">{getSqlProviderMonogram(provider)}</span>
-                                    )}
-                                  </span>
-                                </button>
-                              );
-                            })()
-                          ))}
-                        </div>
-                        <SqlHighlightEditor
-                          value={String(sqlDraft[activeSqlProvider] ?? "")}
-                          onChange={(nextValue) => setSqlDraft((prev) => ({ ...prev, [activeSqlProvider]: nextValue }))}
-                          disabled={fileLoading || saving}
-                        />
-                      </>
-                    )}
-                  </section>
-                </div>
-              </div>
-            </Split>
-          </section>
-        </main>
+        <QueryDeveloperPanel
+          files={files}
+          filesLoading={filesLoading}
+          fileLoading={fileLoading}
+          selectedFile={selectedFile}
+          onDownloadSelectedFile={onDownloadSelectedFile}
+          onSelectFile={onSelectFile}
+          treePaneRef={treePaneRef}
+          searchCollapsed={searchCollapsed}
+          setSearchCollapsed={setSearchCollapsed}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          onSearch={onSearch}
+          searchCaseSensitive={searchCaseSensitive}
+          setSearchCaseSensitive={setSearchCaseSensitive}
+          searchMatches={searchMatches}
+          currentSearchDisplay={currentSearchDisplay}
+          moveSearch={moveSearch}
+          treeRows={treeRows}
+          selectedPath={selectedPath}
+          expanded={expanded}
+          onSelectNode={onSelectNode}
+          onOpenContextMenu={onOpenContextMenu}
+          toggleNodeExpanded={toggleNodeExpanded}
+          nodeDetail={nodeDetail}
+          propertyGroups={propertyGroups}
+          propertiesCollapsed={propertiesCollapsed}
+          setPropertiesCollapsed={setPropertiesCollapsed}
+          propertyDraft={propertyDraft}
+          onChangeProperty={onChangeProperty}
+          saving={saving}
+          propertyDirty={propertyDirty}
+          onUpdateProperties={onUpdateProperties}
+          activeSqlProvider={activeSqlProvider}
+          setActiveSqlProvider={setActiveSqlProvider}
+          sqlDraft={sqlDraft}
+          setSqlDraft={setSqlDraft}
+          sqlDirty={sqlDirty}
+          onUpdateSqlQueries={onUpdateSqlQueries}
+          contextMenu={contextMenu}
+          contextNode={contextNode}
+          contextMenuRef={contextMenuRef}
+          treeClipboard={treeClipboard}
+          onTreeContextAction={onTreeContextAction}
+        />
       )}
 
       {showOption && (
@@ -1481,22 +1189,8 @@ function App() {
 
 // Query Developer UI/helpers moved to ./queryDeveloper/* modules
 
-function formatDate(value) {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-}
-
-function formatFileSize(size) {
-  const value = Number(size || 0);
-  if (value < 1024) return `${value} B`;
-  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
-  return `${(value / (1024 * 1024)).toFixed(2)} MB`;
-}
-
 async function apiRequest(url, options = {}) {
-  const response = await fetch(url, {
+  const response = await fetch(resolveRequestUrl(url), {
     method: options.method || "GET",
     headers: {
       "Content-Type": "application/json",
@@ -1515,6 +1209,15 @@ async function apiRequest(url, options = {}) {
     throw error;
   }
   return payload;
+}
+
+function resolveRequestUrl(url) {
+  const text = String(url || "").trim();
+  if (!text) return text;
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(text)) {
+    return text;
+  }
+  return buildClientPath(text);
 }
 
 async function requestTreeAction(body) {
