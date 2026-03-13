@@ -1,32 +1,52 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./MenuEditor.css";
 
 const TREE_NODE_TAGS = new Set(["MNU", "MSY", "MIT", "PIT"]);
 
 const CATEGORY_ORDER = ["General", "Font", "Menu", "Assembly", "Image", "User Tag", "Etc"];
+const CATEGORY_DISPLAY = {
+  General: "[01] General",
+  Font: "[02] Font",
+  Menu: "[03] Menu",
+  Assembly: "[04] Assembly",
+  Image: "[05] Image",
+  "User Tag": "[06] User Tag",
+  Etc: "[07] Etc",
+};
 
 const ATTRIBUTE_PRIORITY = [
   "_S",
   "NM",
-  "D",
   "CD",
-  "MC",
-  "MD",
-  "PC",
-  "PU",
-  "PP",
-  "PB",
-  "PL",
-  "TP",
-  "UF",
-  "AN",
-  "NS",
-  "CN",
+  "D",
   "FC",
   "FB",
+  "MC",
+  "MD",
   "MB",
+  "MV",
+  "MT",
+  "AN",
+  "TP",
+  "NS",
+  "CN",
+  "UF",
+  "CH",
+  "PT",
+  "AMF",
+  "PC",
+  "PD",
+  "PB",
+  "PP",
+  "PU",
+  "PL",
   "MI",
   "ML",
+  "TG1",
+  "TG2",
+  "TG3",
+  "TG4",
+  "TG5",
   "U1",
   "U2",
   "U3",
@@ -39,23 +59,34 @@ const PROPERTY_META = {
   NM: { label: "Name", category: "General" },
   D: { label: "Description", category: "General" },
   CD: { label: "Code", category: "General" },
-  FC: { label: "Font Color", category: "Font" },
-  FB: { label: "Font Bold", category: "Font" },
-  MB: { label: "Menu Break", category: "Menu" },
-  MC: { label: "Menu Caption", category: "Menu" },
-  MD: { label: "Menu Description", category: "Menu" },
-  PC: { label: "Popup Caption", category: "Menu" },
-  PU: { label: "Popup Action", category: "Menu" },
-  PP: { label: "Popup Position", category: "Menu" },
-  PB: { label: "Popup Behavior", category: "Menu" },
-  PL: { label: "Popup Link", category: "Menu" },
-  TP: { label: "Target Type", category: "Menu" },
-  UF: { label: "User Form", category: "Menu" },
+  FC: { label: "Color", category: "Font" },
+  FB: { label: "Bold", category: "Font" },
+  MB: { label: "Begin Group", category: "Menu" },
+  MV: { label: "Visible", category: "Menu" },
+  MT: { label: "Visible Type", category: "Menu" },
+  MC: { label: "Caption", category: "Menu" },
+  MD: { label: "Description", category: "Menu" },
+  TP: { label: "Form Title Prefix", category: "Menu" },
+  CN: { label: "Form Name", category: "Menu" },
+  UF: { label: "User Function", category: "Menu" },
+  CH: { label: "Cast Channel", category: "Menu" },
+  PT: { label: "Parameters", category: "Menu" },
+  AMF: { label: "Allow Multiple Forms", category: "Menu" },
+  PC: { label: "Caption", category: "Menu" },
+  PD: { label: "Description", category: "Menu" },
+  PB: { label: "Behavior", category: "Menu" },
+  PP: { label: "Permission", category: "Menu" },
+  PU: { label: "Custom Code", category: "Menu" },
+  PL: { label: "Link Menu", category: "Menu" },
   AN: { label: "Assembly Name", category: "Assembly" },
-  NS: { label: "Namespace", category: "Assembly" },
-  CN: { label: "Class Name", category: "Assembly" },
+  NS: { label: "Assembly Name Space", category: "Assembly" },
   MI: { label: "Image(16x16)", category: "Image" },
   ML: { label: "Large Image(32x32)", category: "Image" },
+  TG1: { label: "User Tag 1", category: "User Tag" },
+  TG2: { label: "User Tag 2", category: "User Tag" },
+  TG3: { label: "User Tag 3", category: "User Tag" },
+  TG4: { label: "User Tag 4", category: "User Tag" },
+  TG5: { label: "User Tag 5", category: "User Tag" },
   U1: { label: "User Tag 1", category: "User Tag" },
   U2: { label: "User Tag 2", category: "User Tag" },
   U3: { label: "User Tag 3", category: "User Tag" },
@@ -63,12 +94,76 @@ const PROPERTY_META = {
   U5: { label: "User Tag 5", category: "User Tag" },
 };
 
+const NODE_PROPERTY_KEYS_BY_TAG = {
+  MNU: ["_S", "NM", "D", "FC", "FB", "TG1", "TG2", "TG3", "TG4", "TG5"],
+  MSY: ["_S", "NM", "CD", "D", "FC", "FB", "MI", "ML", "TG1", "TG2", "TG3", "TG4", "TG5"],
+  MIT: [
+    "_S",
+    "NM",
+    "D",
+    "FC",
+    "FB",
+    "MC",
+    "MD",
+    "MB",
+    "MV",
+    "MT",
+    "AN",
+    "TP",
+    "NS",
+    "CN",
+    "UF",
+    "CH",
+    "PT",
+    "AMF",
+    "MI",
+    "ML",
+    "TG1",
+    "TG2",
+    "TG3",
+    "TG4",
+    "TG5",
+  ],
+  PIT: ["_S", "NM", "D", "FC", "FB", "PC", "PD", "PB", "PP", "PU", "PL", "TG1", "TG2", "TG3", "TG4", "TG5"],
+};
+
+const DEFAULT_ATTRIBUTE_VALUES = {
+  FC: "Black",
+  FB: "F",
+  MB: "F",
+  MV: "T",
+  MT: "F",
+  PB: "Custom",
+  PP: "None",
+  AMF: "F",
+};
+
+const ENUM_VALUE_OPTIONS = {
+  MT: [
+    { value: "F", label: "Form" },
+    { value: "D", label: "Dialog" },
+  ],
+  PB: [
+    { value: "Custom", label: "Custom" },
+    { value: "Link", label: "Link" },
+  ],
+  PP: [
+    { value: "None", label: "None" },
+    { value: "Caller", label: "Caller" },
+    { value: "Menu", label: "Menu" },
+  ],
+};
+const BOOLEAN_VALUE_OPTIONS = [
+  { value: "T", label: "True" },
+  { value: "F", label: "False" },
+];
+
 const IMAGE_PREVIEW_ROW_META = {
   MI: { key: "__preview_MI", label: "Selected Image" },
   ML: { key: "__preview_ML", label: "Selected Large Image" },
 };
 
-const BOOLEAN_VALUE_KEYS = new Set(["FB", "MB"]);
+const BOOLEAN_VALUE_KEYS = new Set(["FB", "MB", "MV", "AMF"]);
 const MULTILINE_KEYS = new Set(["MI", "ML"]);
 const TREE_ICON_MAP = {
   MNU: "/icons/menuEditor/ToolMenu.png",
@@ -87,6 +182,7 @@ const ROOT_META_ORDER = ["QF", "QV", "QC", "QU", "QD", "QS"];
 export function MenuEditor() {
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
+  const propertyScrollRef = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileHandle, setFileHandle] = useState(null);
   const [menuMeta, setMenuMeta] = useState(() => createDefaultMenuMeta(new Date()));
@@ -96,10 +192,18 @@ export function MenuEditor() {
   const [selectedNodeId, setSelectedNodeId] = useState("");
   const [expandedNodeIds, setExpandedNodeIds] = useState(() => new Set());
   const [pendingImageKey, setPendingImageKey] = useState("");
+  const [treeSearchDraft, setTreeSearchDraft] = useState("");
+  const [treeSearchQuery, setTreeSearchQuery] = useState("");
+  const [treeSearchMatches, setTreeSearchMatches] = useState([]);
+  const [treeSearchIndex, setTreeSearchIndex] = useState(-1);
 
   const treeRows = useMemo(
     () => flattenTreeRows(treeRoot, expandedNodeIds),
     [treeRoot, expandedNodeIds],
+  );
+  const treeSearchHighlightSet = useMemo(
+    () => buildMenuTreeHighlightSet(treeSearchMatches),
+    [treeSearchMatches],
   );
   const selectedNode = useMemo(
     () => findNodeById(treeRoot, selectedNodeId),
@@ -114,6 +218,12 @@ export function MenuEditor() {
     [propertyRows],
   );
 
+  useEffect(() => {
+    if (propertyScrollRef.current) {
+      propertyScrollRef.current.scrollTop = 0;
+    }
+  }, [selectedNodeId]);
+
   const onLoadMenuFile = useCallback(async (file, nextHandle = null) => {
     if (!file) return;
 
@@ -124,6 +234,10 @@ export function MenuEditor() {
       setSelectedNodeId("");
       setExpandedNodeIds(new Set());
       setIsDirty(false);
+      setTreeSearchDraft("");
+      setTreeSearchQuery("");
+      setTreeSearchMatches([]);
+      setTreeSearchIndex(-1);
       setErrorText("Please select a file with the .mnu extension.");
       return;
     }
@@ -140,6 +254,10 @@ export function MenuEditor() {
       setSelectedNodeId(parsed.tree.id);
       setExpandedNodeIds(defaultExpandedNodes(parsed.tree, 1));
       setIsDirty(false);
+      setTreeSearchDraft("");
+      setTreeSearchQuery("");
+      setTreeSearchMatches([]);
+      setTreeSearchIndex(-1);
       setErrorText("");
     } catch (error) {
       setSelectedFile(null);
@@ -148,6 +266,10 @@ export function MenuEditor() {
       setSelectedNodeId("");
       setExpandedNodeIds(new Set());
       setIsDirty(false);
+      setTreeSearchDraft("");
+      setTreeSearchQuery("");
+      setTreeSearchMatches([]);
+      setTreeSearchIndex(-1);
       setErrorText(error instanceof Error ? error.message : "Failed to parse .mnu file.");
     }
   }, []);
@@ -161,6 +283,10 @@ export function MenuEditor() {
     setSelectedNodeId(tree.id);
     setExpandedNodeIds(defaultExpandedNodes(tree, 1));
     setIsDirty(true);
+    setTreeSearchDraft("");
+    setTreeSearchQuery("");
+    setTreeSearchMatches([]);
+    setTreeSearchIndex(-1);
     setErrorText("");
   }, []);
 
@@ -265,28 +391,42 @@ export function MenuEditor() {
     try {
       const built = buildMenuXml(treeRoot, menuMeta);
       let nextHandle = fileHandle;
-      let nextFileName = String(selectedFile?.name || "LinkOnMenu.mnu");
+      let nextFileName = ensureMenuFileName(selectedFile?.name);
+      let saved = false;
 
       if (supportsFileSystemAccess()) {
-        if (!nextHandle) {
-          nextHandle = await window.showSaveFilePicker({
-            suggestedName: nextFileName,
-            excludeAcceptAllOption: true,
-            types: [{
-              description: "Menu Files",
-              accept: { "application/xml": [".mnu"] },
-            }],
-          });
+        try {
+          if (!nextHandle) {
+            nextHandle = await window.showSaveFilePicker({
+              suggestedName: nextFileName,
+              excludeAcceptAllOption: true,
+              types: [{
+                description: "Menu Files",
+                accept: { "application/xml": [".mnu"] },
+              }],
+            });
+          }
+
+          const writable = await nextHandle.createWritable();
+          await writable.write(built.xmlText);
+          await writable.close();
+
+          nextFileName = ensureMenuFileName(nextHandle.name || nextFileName);
+          setFileHandle(nextHandle);
+          saved = true;
+        } catch (error) {
+          if (isAbortError(error)) return;
+          downloadTextFile(nextFileName, built.xmlText);
+          setFileHandle(null);
+          saved = true;
         }
-
-        const writable = await nextHandle.createWritable();
-        await writable.write(built.xmlText);
-        await writable.close();
-
-        nextFileName = String(nextHandle.name || nextFileName);
-        setFileHandle(nextHandle);
       } else {
         downloadTextFile(nextFileName, built.xmlText);
+        saved = true;
+      }
+
+      if (!saved) {
+        return;
       }
 
       setMenuMeta(built.meta);
@@ -298,6 +438,59 @@ export function MenuEditor() {
       setErrorText(error instanceof Error ? error.message : "Failed to save .mnu file.");
     }
   }, [treeRoot, menuMeta, fileHandle, selectedFile]);
+
+  const onSearchTree = useCallback(() => {
+    const keyword = normalizeSearchText(treeSearchDraft);
+    if (!treeRoot) return;
+    if (!keyword) {
+      setTreeSearchQuery("");
+      setTreeSearchMatches([]);
+      setTreeSearchIndex(-1);
+      return;
+    }
+
+    const isSameQuery = keyword === treeSearchQuery;
+    let matches = treeSearchMatches;
+    let nextIndex = treeSearchIndex;
+
+    if (!isSameQuery || !matches.length) {
+      matches = findMenuTreeMatches(treeRoot, keyword);
+      setTreeSearchQuery(keyword);
+      setTreeSearchMatches(matches);
+      if (!matches.length) {
+        setTreeSearchIndex(-1);
+        return;
+      }
+      nextIndex = 0;
+    } else {
+      const base = treeSearchIndex >= 0 ? treeSearchIndex : -1;
+      nextIndex = (base + 1) % matches.length;
+    }
+
+    const targetNodeId = matches[nextIndex];
+    setTreeSearchIndex(nextIndex);
+    setSelectedNodeId(targetNodeId);
+    setExpandedNodeIds((prev) => expandTreePath(prev, targetNodeId));
+  }, [treeRoot, treeSearchDraft, treeSearchQuery, treeSearchMatches, treeSearchIndex]);
+
+  const onMoveTreeSearch = useCallback((step) => {
+    if (!treeSearchMatches.length) {
+      onSearchTree();
+      return;
+    }
+
+    const base = treeSearchIndex >= 0 ? treeSearchIndex : 0;
+    const nextIndex = (base + step + treeSearchMatches.length) % treeSearchMatches.length;
+    const targetNodeId = treeSearchMatches[nextIndex];
+
+    setTreeSearchIndex(nextIndex);
+    setSelectedNodeId(targetNodeId);
+    setExpandedNodeIds((prev) => expandTreePath(prev, targetNodeId));
+  }, [treeSearchMatches, treeSearchIndex, onSearchTree]);
+
+  const currentTreeSearchDisplay = treeSearchMatches.length > 0 && treeSearchIndex >= 0
+    ? treeSearchIndex + 1
+    : 0;
 
   return (
     <>
@@ -319,16 +512,6 @@ export function MenuEditor() {
         }}
         style={{ display: "none" }}
       />
-
-      {selectedFile ? (
-        <div className="MenuEditor-current-file-wrap">
-          <div className="MenuEditor-current-file-pill">
-            <span className="MenuEditor-current-file-dot" aria-hidden="true" />
-            <span className="MenuEditor-current-file-label">Current File :</span>
-            <strong className="MenuEditor-current-file-name">{selectedFile.name}</strong>
-          </div>
-        </div>
-      ) : null}
 
       <section className="panel MenuEditor-panel">
         <div className="MenuEditor-file-actions-wrap">
@@ -366,138 +549,168 @@ export function MenuEditor() {
               <img src={SAVE_ICON_SRC} alt="" />
             </button>
           </div>
+          <div className="MenuEditor-inline-file-name" title={selectedFile?.name || ""}>
+            {selectedFile ? selectedFile.name : ""}
+          </div>
         </div>
         {errorText ? <p className="error-text MenuEditor-inline-error">{errorText}</p> : null}
 
-        {!treeRoot ? (
-          <div className="MenuEditor-bottom">
-            <div className="MenuEditor-title-wrap">
-              <h2>Menu Editor</h2>
-              <p className="subtext">Open a local .mnu file to start menu editing.</p>
+        <div className="MenuEditor-workspace">
+          <section className="MenuEditor-tree-panel">
+            <div className="MenuEditor-tree-search">
+              <div className="MenuEditor-tree-search-panel">
+                <input
+                  value={treeSearchDraft}
+                  placeholder="Search Name / Description"
+                  aria-label="Search Menu Editor tree"
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+                    setTreeSearchDraft(nextValue);
+                    if (!normalizeSearchText(nextValue)) {
+                      setTreeSearchQuery("");
+                      setTreeSearchMatches([]);
+                      setTreeSearchIndex(-1);
+                    }
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      onSearchTree();
+                    }
+                  }}
+                />
+                <button type="button" className="MenuEditor-tree-search-icon-btn" onClick={onSearchTree} title="Search" aria-label="Search">
+                  <span className="MenuEditor-tree-search-icon MenuEditor-tree-search-icon-magnify" aria-hidden="true" />
+                </button>
+                <span className="MenuEditor-tree-search-count" title={`${treeSearchMatches.length} matched nodes`}>
+                  {currentTreeSearchDisplay}/{treeSearchMatches.length}
+                </span>
+                <button
+                  type="button"
+                  className="MenuEditor-tree-search-icon-btn"
+                  onClick={() => onMoveTreeSearch(-1)}
+                  disabled={!treeSearchMatches.length}
+                  title="Previous match"
+                  aria-label="Previous match"
+                >
+                  <span className="MenuEditor-tree-search-icon MenuEditor-tree-search-icon-up" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  className="MenuEditor-tree-search-icon-btn"
+                  onClick={() => onMoveTreeSearch(1)}
+                  disabled={!treeSearchMatches.length}
+                  title="Next match"
+                  aria-label="Next match"
+                >
+                  <span className="MenuEditor-tree-search-icon MenuEditor-tree-search-icon-down" aria-hidden="true" />
+                </button>
+              </div>
             </div>
+            <div className="MenuEditor-tree-scroll" role="tree" aria-label="Menu tree">
+              {treeRows.map((row) => {
+                const hasChildren = (row.node.children || []).length > 0;
+                const isExpanded = expandedNodeIds.has(row.node.id);
+                const isSelected = selectedNodeId === row.node.id;
+                const isMatched = treeSearchHighlightSet.has(row.node.id);
 
-            {!selectedFile ? (
-              <p className="empty-text">No .mnu file selected yet.</p>
-            ) : null}
-          </div>
-        ) : (
-          <>
-            <div className="MenuEditor-workspace">
-              <section className="MenuEditor-tree-panel">
-                <div className="MenuEditor-section-head">
-                  <h3>LinkOnMenu</h3>
-                </div>
-                <div className="MenuEditor-tree-scroll" role="tree" aria-label="Menu tree">
-                  {treeRows.map((row) => {
-                    const hasChildren = (row.node.children || []).length > 0;
-                    const isExpanded = expandedNodeIds.has(row.node.id);
-                    const isSelected = selectedNodeId === row.node.id;
-
-                    return (
-                      <div
-                        key={row.node.id}
-                        className={`MenuEditor-tree-row ${isSelected ? "selected" : ""}`}
-                        style={{ paddingLeft: `${12 + row.depth * 18}px` }}
-                        role="treeitem"
-                        aria-level={row.depth + 1}
-                        aria-selected={isSelected}
-                        aria-expanded={hasChildren ? isExpanded : undefined}
-                        onClick={() => setSelectedNodeId(row.node.id)}
+                return (
+                  <div
+                    key={row.node.id}
+                    className={`MenuEditor-tree-row ${isSelected ? "selected" : ""} ${isMatched ? "matched" : ""}`}
+                    style={{ paddingLeft: `${12 + row.depth * 18}px` }}
+                    role="treeitem"
+                    aria-level={row.depth + 1}
+                    aria-selected={isSelected}
+                    aria-expanded={hasChildren ? isExpanded : undefined}
+                    onClick={() => setSelectedNodeId(row.node.id)}
+                  >
+                    {hasChildren ? (
+                      <button
+                        type="button"
+                        className="MenuEditor-tree-toggle"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onToggleNode(row.node.id);
+                        }}
+                        aria-label={isExpanded ? "Collapse" : "Expand"}
                       >
-                        {hasChildren ? (
+                        {isExpanded ? "\u25BE" : "\u25B8"}
+                      </button>
+                    ) : (
+                      <span className="MenuEditor-tree-toggle MenuEditor-tree-toggle-spacer" />
+                    )}
+                    <span className={`MenuEditor-tree-tag tag-${row.node.tag.toLowerCase()}`}>
+                      <img src={TREE_ICON_MAP[row.node.tag] || TREE_ICON_MAP.MIT} alt="" />
+                      <span>{row.node.tag}</span>
+                    </span>
+                    <span className="MenuEditor-tree-text">{formatNodeTitle(row.node)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="MenuEditor-prop-panel">
+            <div className="MenuEditor-prop-head">
+              <h3>Properties</h3>
+            </div>
+            <div ref={propertyScrollRef} className="MenuEditor-prop-scroll">
+              {selectedNode ? propertyGroups.map((group) => (
+                <div key={group.category} className="MenuEditor-prop-group">
+                  <div className="MenuEditor-prop-category">{formatCategoryDisplay(group.category)}</div>
+                  {group.rows.map((row) => (
+                    <div key={row.key} className="MenuEditor-prop-row">
+                      <label title={row.displayKey}>{row.label}</label>
+                      {row.imagePreviewOnly ? (
+                        <div className="MenuEditor-image-preview-wrap">
+                          {(() => {
+                            const previewSrc = resolveMenuImagePreviewSrc(treeRoot, selectedNode, row.previewKey, row.value);
+                            return previewSrc ? (
+                              <img src={previewSrc} alt={row.label} className="MenuEditor-image-preview" />
+                            ) : (
+                              <span className="MenuEditor-image-preview-empty">No image</span>
+                            );
+                          })()}
+                        </div>
+                      ) : row.readOnly ? (
+                        <input value={row.value} readOnly />
+                      ) : row.options ? (
+                        <select value={row.value} onChange={(event) => onChangeProperty(row, event.target.value)}>
+                          {row.options.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : row.isImage ? (
+                        <div className="MenuEditor-image-picker-field">
+                          <input
+                            value={resolveMenuImagePreviewSrc(treeRoot, selectedNode, row.key, row.value) ? "System.Drawing.Bitmap" : ""}
+                            readOnly
+                          />
                           <button
                             type="button"
-                            className="MenuEditor-tree-toggle"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onToggleNode(row.node.id);
-                            }}
-                            aria-label={isExpanded ? "Collapse" : "Expand"}
+                            className="MenuEditor-image-select-btn"
+                            onClick={() => onOpenImagePicker(row.key)}
+                            title="Select image"
+                            aria-label="Select image"
                           >
-                            {isExpanded ? "\u25BE" : "\u25B8"}
+                            ...
                           </button>
-                        ) : (
-                          <span className="MenuEditor-tree-toggle MenuEditor-tree-toggle-spacer" />
-                        )}
-                        <span className={`MenuEditor-tree-tag tag-${row.node.tag.toLowerCase()}`}>
-                          <img src={TREE_ICON_MAP[row.node.tag] || TREE_ICON_MAP.MIT} alt="" />
-                          <span>{row.node.tag}</span>
-                        </span>
-                        <span className="MenuEditor-tree-text">{formatNodeTitle(row.node)}</span>
-                      </div>
-                    );
-                  })}
+                        </div>
+                      ) : row.multiline ? (
+                        <textarea value={row.value} rows={3} onChange={(event) => onChangeProperty(row, event.target.value)} />
+                      ) : (
+                        <input value={row.value} onChange={(event) => onChangeProperty(row, event.target.value)} />
+                      )}
+                    </div>
+                  ))}
                 </div>
-              </section>
-
-              <section className="MenuEditor-prop-panel">
-                <div className="MenuEditor-section-head">
-                  <h3>Properties</h3>
-                  <p>{selectedNode ? formatNodeTitle(selectedNode) : "-"}</p>
-                </div>
-
-                {!selectedNode ? (
-                  <p className="empty-text">Select a node in TreeView.</p>
-                ) : (
-                  <div className="MenuEditor-prop-scroll">
-                    {propertyGroups.map((group) => (
-                      <div key={group.category} className="MenuEditor-prop-group">
-                        <div className="MenuEditor-prop-category">{group.category}</div>
-                        {group.rows.map((row) => (
-                          <div key={row.key} className="MenuEditor-prop-row">
-                            <label title={row.displayKey}>{row.label}</label>
-                            {row.imagePreviewOnly ? (
-                              <div className="MenuEditor-image-preview-wrap">
-                                {(() => {
-                                  const previewSrc = resolveMenuImagePreviewSrc(treeRoot, selectedNode, row.previewKey, row.value);
-                                  return previewSrc ? (
-                                    <img src={previewSrc} alt={row.label} className="MenuEditor-image-preview" />
-                                  ) : (
-                                    <span className="MenuEditor-image-preview-empty">No image</span>
-                                  );
-                                })()}
-                              </div>
-                            ) : row.readOnly ? (
-                              <input value={row.value} readOnly />
-                            ) : row.options ? (
-                              <select value={row.value} onChange={(event) => onChangeProperty(row, event.target.value)}>
-                                {row.options.map((option) => (
-                                  <option key={option} value={option}>
-                                    {option}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : row.isImage ? (
-                              <div className="MenuEditor-image-picker-field">
-                                <input
-                                  value={resolveMenuImagePreviewSrc(treeRoot, selectedNode, row.key, row.value) ? "System.Drawing.Bitmap" : ""}
-                                  readOnly
-                                />
-                                <button
-                                  type="button"
-                                  className="MenuEditor-image-select-btn"
-                                  onClick={() => onOpenImagePicker(row.key)}
-                                  title="Select image"
-                                  aria-label="Select image"
-                                >
-                                  ...
-                                </button>
-                              </div>
-                            ) : row.multiline ? (
-                              <textarea value={row.value} rows={3} onChange={(event) => onChangeProperty(row, event.target.value)} />
-                            ) : (
-                              <input value={row.value} onChange={(event) => onChangeProperty(row, event.target.value)} />
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
+              )) : null}
             </div>
-          </>
-        )}
+          </section>
+        </div>
       </section>
     </>
   );
@@ -576,6 +789,55 @@ function flattenTreeRows(root, expandedNodeIds) {
   return rows;
 }
 
+function findMenuTreeMatches(root, keyword) {
+  if (!root) return [];
+  const needle = normalizeSearchText(keyword);
+  if (!needle) return [];
+
+  const matches = [];
+  const walk = (node) => {
+    if (!node) return;
+    if (isMenuTreeNodeMatched(node, needle)) {
+      matches.push(node.id);
+    }
+    for (const child of node.children || []) {
+      walk(child);
+    }
+  };
+  walk(root);
+  return matches;
+}
+
+function isMenuTreeNodeMatched(node, needle) {
+  if (!node || !needle) return false;
+  const source = `${String(node.tag || "")} ${formatNodeTitle(node)}`;
+  return normalizeSearchText(source).includes(needle);
+}
+
+function normalizeSearchText(value) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function buildMenuTreeHighlightSet(matchIds) {
+  const highlightSet = new Set();
+  for (const id of matchIds || []) {
+    const parts = String(id || "").split(".");
+    for (let index = 1; index <= parts.length; index += 1) {
+      highlightSet.add(parts.slice(0, index).join("."));
+    }
+  }
+  return highlightSet;
+}
+
+function expandTreePath(expandedSet, nodeId) {
+  const next = new Set(expandedSet || []);
+  const parts = String(nodeId || "").split(".");
+  for (let index = 1; index <= parts.length; index += 1) {
+    next.add(parts.slice(0, index).join("."));
+  }
+  return next;
+}
+
 function findNodeById(node, id) {
   if (!node || !id) return null;
   if (node.id === id) return node;
@@ -606,8 +868,42 @@ function updateNodeById(node, nodeId, updater) {
 
 function formatNodeTitle(node) {
   const attrs = node?.attributes || {};
+  const tag = String(node?.tag || "").toUpperCase();
+
+  if (tag === "MNU") {
+    return firstNonEmpty(attrs.NM) || "(unnamed)";
+  }
+
+  if (tag === "MSY") {
+    return formatBracketCaption(attrs.NM, attrs.CD);
+  }
+
+  if (tag === "MIT") {
+    return formatBracketCaption(attrs.NM, attrs.MC);
+  }
+
+  if (tag === "PIT") {
+    return formatBracketCaption(attrs.NM, attrs.PC);
+  }
+
   const title = firstNonEmpty(attrs.NM, attrs.MC, attrs.PC, attrs.CD, attrs.CN, attrs.D, attrs.MD, attrs.PU, attrs.PL);
   return title || "(unnamed)";
+}
+
+function formatBracketCaption(name, caption) {
+  const nameText = String(name ?? "").trim();
+  const captionText = String(caption ?? "").trim();
+
+  if (nameText && captionText) {
+    return `[${nameText}] ${captionText}`;
+  }
+  if (nameText) {
+    return `[${nameText}]`;
+  }
+  if (captionText) {
+    return captionText;
+  }
+  return "(unnamed)";
 }
 
 function firstNonEmpty(...values) {
@@ -635,9 +931,12 @@ function buildPropertyRows(node) {
   ];
 
   const attributes = node.attributes || {};
-  const keys = Object.keys(attributes).sort(compareAttributeKey);
+  const tag = String(node.tag || "").toUpperCase();
+  const preferredKeys = NODE_PROPERTY_KEYS_BY_TAG[tag] || [];
+  const keys = buildOrderedPropertyKeys(preferredKeys, Object.keys(attributes || {}));
   for (const key of keys) {
-    const value = String(attributes[key] ?? "");
+    const hasAttribute = Object.prototype.hasOwnProperty.call(attributes, key);
+    const value = String(hasAttribute ? attributes[key] ?? "" : resolvePropertyDefaultValue(key));
     const meta = PROPERTY_META[key] || getFallbackMeta(key);
     rows.push({
       key,
@@ -647,7 +946,7 @@ function buildPropertyRows(node) {
       value,
       readOnly: Boolean(meta.readOnly),
       multiline: MULTILINE_KEYS.has(key) || value.length >= 140,
-      options: BOOLEAN_VALUE_KEYS.has(key) ? ["T", "F"] : null,
+      options: ENUM_VALUE_OPTIONS[key] || (BOOLEAN_VALUE_KEYS.has(key) ? BOOLEAN_VALUE_OPTIONS : null),
       isImage: key === "MI" || key === "ML",
       imagePreviewOnly: false,
       previewKey: "",
@@ -673,6 +972,36 @@ function buildPropertyRows(node) {
   return rows;
 }
 
+function buildOrderedPropertyKeys(preferredKeys, actualKeys) {
+  const ordered = [];
+  const seen = new Set();
+
+  for (const key of preferredKeys || []) {
+    const keyText = String(key || "");
+    if (!keyText || seen.has(keyText)) continue;
+    seen.add(keyText);
+    ordered.push(keyText);
+  }
+
+  const extras = [];
+  for (const key of actualKeys || []) {
+    const keyText = String(key || "");
+    if (!keyText || seen.has(keyText)) continue;
+    seen.add(keyText);
+    extras.push(keyText);
+  }
+
+  extras.sort(compareAttributeKey);
+  return [...ordered, ...extras];
+}
+
+function resolvePropertyDefaultValue(key) {
+  if (Object.prototype.hasOwnProperty.call(DEFAULT_ATTRIBUTE_VALUES, key)) {
+    return DEFAULT_ATTRIBUTE_VALUES[key];
+  }
+  return "";
+}
+
 function compareAttributeKey(left, right) {
   const leftIndex = ATTRIBUTE_PRIORITY.indexOf(left);
   const rightIndex = ATTRIBUTE_PRIORITY.indexOf(right);
@@ -685,11 +1014,11 @@ function compareAttributeKey(left, right) {
 
 function getFallbackMeta(key) {
   const keyText = String(key || "").toUpperCase();
-  if (/^U[0-9]+$/.test(keyText)) return { label: keyText, category: "User Tag", readOnly: false };
-  if (["AN", "NS", "CN"].includes(keyText)) return { label: keyText, category: "Assembly", readOnly: false };
+  if (/^(U[0-9]+|TG[0-9]+)$/.test(keyText)) return { label: keyText, category: "User Tag", readOnly: false };
+  if (["AN", "NS"].includes(keyText)) return { label: keyText, category: "Assembly", readOnly: false };
   if (["MI", "ML"].includes(keyText)) return { label: keyText, category: "Image", readOnly: false };
   if (["FC", "FB"].includes(keyText)) return { label: keyText, category: "Font", readOnly: false };
-  if (["MC", "MD", "PC", "PU", "PP", "PB", "PL", "TP", "UF", "MB"].includes(keyText)) {
+  if (["MC", "MD", "PC", "PD", "PU", "PP", "PB", "PL", "TP", "UF", "MB", "MV", "MT", "CH", "PT", "AMF", "CN"].includes(keyText)) {
     return { label: keyText, category: "Menu", readOnly: false };
   }
   return { label: keyText, category: "Etc", readOnly: false };
@@ -713,6 +1042,10 @@ function groupPropertyRows(rows) {
     ordered.push({ category, rows: categoryRows });
   }
   return ordered;
+}
+
+function formatCategoryDisplay(category) {
+  return CATEGORY_DISPLAY[category] || category;
 }
 
 function resolveMenuImagePreviewSrc(root, node, key, value) {
@@ -951,8 +1284,14 @@ function escapeXmlAttribute(value) {
     .replace(/>/g, "&gt;");
 }
 
+function ensureMenuFileName(fileName) {
+  const nameText = String(fileName ?? "").trim();
+  const fallbackName = nameText || "LinkOnMenu.mnu";
+  return /\.mnu$/i.test(fallbackName) ? fallbackName : `${fallbackName}.mnu`;
+}
+
 function downloadTextFile(fileName, text) {
-  const safeName = /\.mnu$/i.test(String(fileName || "")) ? String(fileName) : `${String(fileName || "LinkOnMenu")}.mnu`;
+  const safeName = ensureMenuFileName(fileName);
   const blob = new Blob([String(text ?? "")], {
     type: "application/xml;charset=utf-8",
   });
