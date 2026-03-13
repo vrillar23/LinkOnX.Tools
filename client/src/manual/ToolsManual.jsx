@@ -67,12 +67,42 @@ const MANUAL_SECTIONS = [
     id: "menuEditor",
     title: "Menu Editor",
     image: "manual/screenshots/menu-editor-overview.png",
-    description: "Create and maintain .mnu menu structures with toolbar actions.",
+    description: "Use this screen to create and maintain .mnu menu tree nodes and related properties.",
     points: [
-      "Toolbar buttons: New, Open, Save.",
-      "Tree area: browse menu hierarchy and select node.",
-      "Properties area: edit selected menu node attributes.",
-      "Current file badge: shows active .mnu file name.",
+      "Menu path: Home > Declaration > Menu Editor or Ribbon Declaration > Menu Editor.",
+      "Toolbar: create new file, open existing .mnu file, and save current edits.",
+      "Tree panel: search by Name / Caption and move between matched nodes.",
+      "Properties panel: edit selected node attributes for MNU, MSY, MIT, and PIT.",
+    ],
+    buttonGroups: [
+      {
+        title: "Main Buttons",
+        items: [
+          { name: "New (.mnu)", iconImage: "icons/menuEditor/new_16x16.png", description: "Create a blank menu tree with default LinkOnMenu root." },
+          { name: "Open (.mnu)", iconImage: "icons/menuEditor/open_16x16.png", description: "Open and load local .mnu file into tree and properties." },
+          { name: "Save (.mnu)", iconImage: "icons/menuEditor/save_16x16.png", description: "Save current menu XML to selected file." },
+        ],
+      },
+      {
+        title: "Tree Search Buttons",
+        items: [
+          { name: "Search", iconClass: "tree-search-icon tree-search-icon-magnify", description: "Run tree search by Name / Caption text." },
+          { name: "Previous", iconClass: "tree-search-icon tree-search-icon-up", description: "Move to previous matched node." },
+          { name: "Next", iconClass: "tree-search-icon tree-search-icon-down", description: "Move to next matched node." },
+        ],
+      },
+      {
+        title: "Property Buttons",
+        items: [
+          { name: "Image Select (...)", iconText: "...", description: "Select image file for Image(16x16) / Large Image(32x32) property fields." },
+        ],
+      },
+    ],
+    menuTitle: "Menu",
+    menuItems: [
+      { name: "Home > Declaration > Menu Editor", description: "Open Menu Editor from Home shortcut card." },
+      { name: "Ribbon > Declaration > Menu Editor", description: "Switch to Menu Editor from ribbon declaration group." },
+      { name: "Tree Node Types (MNU / MSY / MIT / PIT)", description: "MNU: menu root, MSY: system, MIT: menu item, PIT: popup item." },
     ],
   },
   {
@@ -170,10 +200,10 @@ export function ToolsManual() {
                 </div>
               ) : null}
 
-              {section.popupMenuItems?.length ? (
+              {(section.menuItems?.length || section.popupMenuItems?.length) ? (
                 <div className="tools-manual-feature-block">
-                  <h4>Popup Menu</h4>
-                  <table className="tools-manual-table" aria-label={`${section.title} Popup Menu`}>
+                  <h4>{section.menuTitle || (section.popupMenuItems?.length ? "Popup Menu" : "Menu")}</h4>
+                  <table className="tools-manual-table" aria-label={`${section.title} ${section.menuTitle || (section.popupMenuItems?.length ? "Popup Menu" : "Menu")}`}>
                     <thead>
                       <tr>
                         <th>Menu</th>
@@ -181,7 +211,7 @@ export function ToolsManual() {
                       </tr>
                     </thead>
                     <tbody>
-                      {section.popupMenuItems.map((item) => (
+                      {(section.menuItems || section.popupMenuItems).map((item) => (
                         <tr key={item.name}>
                           <td>
                             <span className="tools-manual-item-name">
