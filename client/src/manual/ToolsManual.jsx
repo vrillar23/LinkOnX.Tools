@@ -72,6 +72,7 @@ const MANUAL_SECTIONS = [
       "Menu path: Home > Declaration > Menu Editor or Ribbon Declaration > Menu Editor.",
       "Toolbar: create new file, open existing .mnu file, and save current edits.",
       "Tree panel: search by Name / Caption and move between matched nodes.",
+      "Tree interaction: double-click node to expand/collapse and use Delete key to run Remove on selected node.",
       "Properties panel: edit selected node attributes for MNU, MSY, MIT, and PIT.",
     ],
     buttonGroups: [
@@ -104,16 +105,68 @@ const MANUAL_SECTIONS = [
       { name: "Ribbon > Declaration > Menu Editor", description: "Switch to Menu Editor from ribbon declaration group." },
       { name: "Tree Node Types (MNU / MSY / MIT / PIT)", description: "MNU: menu root, MSY: system, MIT: menu item, PIT: popup item." },
     ],
+    popupMenuTitle: "Popup Menu",
+    popupMenuItems: [
+      { name: "Expand", iconClass: "tree-context-item-icon tree-context-icon-expand", description: "Expand selected node when child nodes exist." },
+      { name: "Collapse", iconClass: "tree-context-item-icon tree-context-icon-collapse", description: "Collapse selected node when node is expanded." },
+      { name: "Copy", iconClass: "tree-context-item-icon tree-context-icon-copy", description: "Copy selected node to Menu Editor clipboard." },
+      { name: "Cut", iconClass: "tree-context-item-icon tree-context-icon-cut", description: "Copy selected node to clipboard, then remove it from tree." },
+      { name: "Paste Sibling", iconClass: "tree-context-item-icon tree-context-icon-paste", description: "Paste clipboard node as sibling after selected node (same type only)." },
+      { name: "Paste Child", iconClass: "tree-context-item-icon tree-context-icon-paste", description: "Paste clipboard node as child (MNU->MSY, MSY->MIT, MIT->MIT/PIT by rule)." },
+      { name: "Paste Popup Menus", iconClass: "tree-context-item-icon tree-context-icon-paste", description: "On MIT node, paste PIT children from copied MIT node." },
+      { name: "Move Up", iconClass: "tree-context-item-icon tree-context-icon-move-up", description: "Move selected node one step up among siblings." },
+      { name: "Move Down", iconClass: "tree-context-item-icon tree-context-icon-move-down", description: "Move selected node one step down among siblings." },
+      { name: "Remove", iconClass: "tree-context-item-icon tree-context-icon-delete", description: "Remove selected node (same behavior as keyboard Delete key)." },
+      { name: "Remove Popup Menus", iconClass: "tree-context-item-icon tree-context-icon-delete", description: "On MIT node, remove all child PIT nodes." },
+      { name: "Insert Before Menu Item", iconClass: "tree-context-item-icon tree-context-icon-insert-before", description: "Insert same-type node before selected node." },
+      { name: "Insert After Menu Item", iconClass: "tree-context-item-icon tree-context-icon-insert-after", description: "Insert same-type node after selected node." },
+      { name: "Append Popup Menu Item", iconClass: "tree-context-item-icon tree-context-icon-append", description: "On MIT node, append new PIT node (enabled when child MIT does not exist)." },
+    ],
   },
   {
     id: "languageEditor",
     title: "Language Editor",
     image: "manual/screenshots/language-editor-overview.png",
-    description: "Language module entry point from Ribbon and Home shortcuts.",
+    description: "Use this screen to create and maintain .lng language files (Caption / Message).",
     points: [
-      "Open from Home > Declaration > Language or Ribbon Declaration group.",
-      "Current build shows placeholder page for Language module integration.",
-      "Use this screen position and menu path for future language maintenance workflow.",
+      "Menu path: Home > Declaration > Language or Ribbon Declaration > Language.",
+      "Toolbar: new/open/save/save-as and quick actions for Goto Error / Gen Enum.",
+      "Tabs: switch between Caption and Message tree lists.",
+      "Properties panel: edit selected row values and use header buttons to Update / Delete.",
+    ],
+    buttonGroups: [
+      {
+        title: "Main Buttons",
+        items: [
+          { name: "New (.lng)", iconImage: "icons/menuEditor/new_16x16.png", description: "Create new blank language file data." },
+          { name: "Open (.lng)", iconImage: "icons/menuEditor/open_16x16.png", description: "Open and load local .lng file." },
+          { name: "Save (.lng)", iconImage: "icons/menuEditor/save_16x16.png", description: "Save current language data to file." },
+          { name: "Save As (.lng)", iconImage: "icons/languageEditor/saveas_16x16.png", description: "Save current data as a new .lng file." },
+          { name: "Goto Error", iconImage: "icons/languageEditor/ToolGotoError.png", description: "Move to duplicate key entry (Caption DEF / Message MID)." },
+          { name: "Gen Enum", iconImage: "icons/languageEditor/ToolEnumGenerate.png", description: "Generate enum text from Message items." },
+        ],
+      },
+      {
+        title: "Tree Search Buttons",
+        items: [
+          { name: "Find", iconText: "Find", description: "Run tree search by ID/default/description text." },
+          { name: "Previous", iconClass: "tree-search-icon tree-search-icon-up", description: "Move to previous matched row." },
+          { name: "Next", iconClass: "tree-search-icon tree-search-icon-down", description: "Move to next matched row." },
+        ],
+      },
+      {
+        title: "Properties Header Buttons",
+        items: [
+          { name: "Update", iconImage: "icons/languageEditor/ToolCheck.png", description: "Apply current property edits to selected Caption/Message row." },
+          { name: "Delete", iconImage: "icons/languageEditor/ToolRemove.png", description: "Delete selected Caption/Message row." },
+        ],
+      },
+    ],
+    menuTitle: "Menu",
+    menuItems: [
+      { name: "Home > Declaration > Language", description: "Open Language Editor from Home shortcut card." },
+      { name: "Ribbon > Declaration > Language", description: "Switch to Language Editor from ribbon declaration group." },
+      { name: "Tab: Caption / Message", description: "Select target language group for editing and search." },
     ],
   },
   {
@@ -200,10 +253,10 @@ export function ToolsManual() {
                 </div>
               ) : null}
 
-              {(section.menuItems?.length || section.popupMenuItems?.length) ? (
+              {section.menuItems?.length ? (
                 <div className="tools-manual-feature-block">
-                  <h4>{section.menuTitle || (section.popupMenuItems?.length ? "Popup Menu" : "Menu")}</h4>
-                  <table className="tools-manual-table" aria-label={`${section.title} ${section.menuTitle || (section.popupMenuItems?.length ? "Popup Menu" : "Menu")}`}>
+                  <h4>{section.menuTitle || "Menu"}</h4>
+                  <table className="tools-manual-table" aria-label={`${section.title} ${section.menuTitle || "Menu"}`}>
                     <thead>
                       <tr>
                         <th>Menu</th>
@@ -211,7 +264,36 @@ export function ToolsManual() {
                       </tr>
                     </thead>
                     <tbody>
-                      {(section.menuItems || section.popupMenuItems).map((item) => (
+                      {section.menuItems.map((item) => (
+                        <tr key={item.name}>
+                          <td>
+                            <span className="tools-manual-item-name">
+                              <span className="tools-manual-inline-icon-box" aria-hidden="true">
+                                {renderManualIcon(item)}
+                              </span>
+                              <span>{item.name}</span>
+                            </span>
+                          </td>
+                          <td>{item.description}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
+
+              {section.popupMenuItems?.length ? (
+                <div className="tools-manual-feature-block">
+                  <h4>{section.popupMenuTitle || "Popup Menu"}</h4>
+                  <table className="tools-manual-table" aria-label={`${section.title} ${section.popupMenuTitle || "Popup Menu"}`}>
+                    <thead>
+                      <tr>
+                        <th>Menu</th>
+                        <th>Function</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {section.popupMenuItems.map((item) => (
                         <tr key={item.name}>
                           <td>
                             <span className="tools-manual-item-name">

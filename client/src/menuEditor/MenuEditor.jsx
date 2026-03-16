@@ -183,6 +183,7 @@ export function MenuEditor() {
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
   const propertyScrollRef = useRef(null);
+  const contextMenuRef = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileHandle, setFileHandle] = useState(null);
   const [menuMeta, setMenuMeta] = useState(() => createDefaultMenuMeta(new Date()));
@@ -196,6 +197,8 @@ export function MenuEditor() {
   const [treeSearchQuery, setTreeSearchQuery] = useState("");
   const [treeSearchMatches, setTreeSearchMatches] = useState([]);
   const [treeSearchIndex, setTreeSearchIndex] = useState(-1);
+  const [contextMenu, setContextMenu] = useState(null);
+  const [treeClipboard, setTreeClipboard] = useState(null);
 
   const treeRows = useMemo(
     () => flattenTreeRows(treeRoot, expandedNodeIds),
@@ -208,6 +211,10 @@ export function MenuEditor() {
   const selectedNode = useMemo(
     () => findNodeById(treeRoot, selectedNodeId),
     [treeRoot, selectedNodeId],
+  );
+  const contextNode = useMemo(
+    () => (contextMenu?.nodeId ? findNodeById(treeRoot, contextMenu.nodeId) : null),
+    [contextMenu?.nodeId, treeRoot],
   );
   const propertyRows = useMemo(
     () => buildPropertyRows(selectedNode),
@@ -224,6 +231,31 @@ export function MenuEditor() {
     }
   }, [selectedNodeId]);
 
+  useEffect(() => {
+    if (!contextMenu) return undefined;
+
+    const onPointerDown = (event) => {
+      const target = event.target;
+      if (contextMenuRef.current && target instanceof Node && contextMenuRef.current.contains(target)) return;
+      setContextMenu(null);
+    };
+    const onEscape = (event) => {
+      if (event.key === "Escape") setContextMenu(null);
+    };
+    const onViewportChanged = () => setContextMenu(null);
+
+    window.addEventListener("mousedown", onPointerDown, true);
+    window.addEventListener("keydown", onEscape);
+    window.addEventListener("resize", onViewportChanged);
+    window.addEventListener("scroll", onViewportChanged, true);
+    return () => {
+      window.removeEventListener("mousedown", onPointerDown, true);
+      window.removeEventListener("keydown", onEscape);
+      window.removeEventListener("resize", onViewportChanged);
+      window.removeEventListener("scroll", onViewportChanged, true);
+    };
+  }, [contextMenu]);
+
   const onLoadMenuFile = useCallback(async (file, nextHandle = null) => {
     if (!file) return;
 
@@ -238,6 +270,8 @@ export function MenuEditor() {
       setTreeSearchQuery("");
       setTreeSearchMatches([]);
       setTreeSearchIndex(-1);
+      setContextMenu(null);
+      setTreeClipboard(null);
       setErrorText("Please select a file with the .mnu extension.");
       return;
     }
@@ -258,6 +292,8 @@ export function MenuEditor() {
       setTreeSearchQuery("");
       setTreeSearchMatches([]);
       setTreeSearchIndex(-1);
+      setContextMenu(null);
+      setTreeClipboard(null);
       setErrorText("");
     } catch (error) {
       setSelectedFile(null);
@@ -270,6 +306,8 @@ export function MenuEditor() {
       setTreeSearchQuery("");
       setTreeSearchMatches([]);
       setTreeSearchIndex(-1);
+      setContextMenu(null);
+      setTreeClipboard(null);
       setErrorText(error instanceof Error ? error.message : "Failed to parse .mnu file.");
     }
   }, []);
@@ -287,6 +325,8 @@ export function MenuEditor() {
     setTreeSearchQuery("");
     setTreeSearchMatches([]);
     setTreeSearchIndex(-1);
+    setContextMenu(null);
+    setTreeClipboard(null);
     setErrorText("");
   }, []);
 
@@ -488,6 +528,260 @@ export function MenuEditor() {
     setExpandedNodeIds((prev) => expandTreePath(prev, targetNodeId));
   }, [treeSearchMatches, treeSearchIndex, onSearchTree]);
 
+  const onOpenContextMenu = useCallback((event, nodeId) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setSelectedNodeId(nodeId);
+    setContextMenu({
+      x: Number(event.clientX || 0),
+      y: Number(event.clientY || 0),
+      nodeId,
+    });
+  }, []);
+
+  const onTreeContextAction = useCallback((action, nodeIdOverride = "") => {
+    const targetNodeId = String(nodeIdOverride || contextMenu?.nodeId || "");
+    if (!treeRoot || !targetNodeId) {
+      setContextMenu(null);
+      return;
+    }
+
+    const targetNode = findNodeById(treeRoot, targetNodeId);
+    if (!targetNode) {
+      setContextMenu(null);
+      return;
+    }
+
+    const targetPath = parseNodePath(targetNodeId);
+    if (!targetPath) {
+      setContextMenu(null);
+      return;
+    }
+
+    const isRoot = targetPath.length === 0;
+    const hasChildren = (targetNode.children || []).length > 0;
+    const isOpen = isRoot ? true : expandedNodeIds.has(targetNode.id);
+
+    if (action === "expand") {
+      if (hasChildren) setExpandedNodeIds((prev) => expandTreePath(prev, targetNode.id));
+      setContextMenu(null);
+      return;
+    }
+
+    if (action === "collapse") {
+      if (hasChildren && !isRoot && isOpen) {
+        setExpandedNodeIds((prev) => {
+          const next = new Set(prev);
+          next.delete(targetNode.id);
+          return next;
+        });
+      }
+      setContextMenu(null);
+      return;
+    }
+
+    if (action === "copy") {
+      if (!isRoot) {
+        setTreeClipboard({
+          tag: targetNode.tag,
+          node: cloneMenuTreeNode(targetNode),
+        });
+      }
+      setContextMenu(null);
+      return;
+    }
+
+    const nextTreeRoot = cloneMenuTreeNode(treeRoot);
+    const sequenceState = {
+      value: Math.max(parseSequenceNumber(menuMeta?.QS), findMaxSequenceId(nextTreeRoot)),
+    };
+    const usedNames = collectUsedMenuNames(nextTreeRoot);
+    let nextSelectedPath = targetPath;
+    let changed = false;
+
+    if (action === "cut") {
+      if (!isRoot) {
+        setTreeClipboard({
+          tag: targetNode.tag,
+          node: cloneMenuTreeNode(targetNode),
+        });
+        const parentPath = targetPath.slice(0, -1);
+        const parentNode = getNodeByPath(nextTreeRoot, parentPath);
+        const childIndex = targetPath[targetPath.length - 1];
+        if (parentNode && Array.isArray(parentNode.children) && childIndex >= 0 && childIndex < parentNode.children.length) {
+          parentNode.children.splice(childIndex, 1);
+          nextSelectedPath = findPreviousSelectionPath(parentPath, childIndex);
+          changed = true;
+        }
+      }
+    } else if (action === "pasteSibling") {
+      if (canPasteToSibling(targetNode, treeClipboard) && !isRoot) {
+        const parentPath = targetPath.slice(0, -1);
+        const parentNode = getNodeByPath(nextTreeRoot, parentPath);
+        const childIndex = targetPath[targetPath.length - 1];
+        if (parentNode && Array.isArray(parentNode.children)) {
+          const pasted = assignSequenceIdsToNode(cloneMenuTreeNode(treeClipboard.node), sequenceState, usedNames);
+          const insertIndex = childIndex + 1;
+          parentNode.children.splice(insertIndex, 0, pasted);
+          nextSelectedPath = [...parentPath, insertIndex];
+          changed = true;
+        }
+      }
+    } else if (action === "pasteChild") {
+      if (canPasteChildToNode(targetNode, treeClipboard)) {
+        const targetNode = getNodeByPath(nextTreeRoot, targetPath);
+        if (targetNode) {
+          const pasted = assignSequenceIdsToNode(cloneMenuTreeNode(treeClipboard.node), sequenceState, usedNames);
+          const appendIndex = (targetNode.children || []).length;
+          targetNode.children = [...(targetNode.children || []), pasted];
+          nextSelectedPath = [...targetPath, appendIndex];
+          changed = true;
+        }
+      }
+    } else if (action === "pastePopupMenus") {
+      if (canPastePopupMenusToNode(targetNode, treeClipboard)) {
+        const targetNode = getNodeByPath(nextTreeRoot, targetPath);
+        if (targetNode) {
+          const clipNode = assignSequenceIdsToNode(cloneMenuTreeNode(treeClipboard.node), sequenceState, usedNames);
+          const popupChildren = (clipNode.children || []).filter((child) => String(child?.tag || "").toUpperCase() === "PIT");
+          if (popupChildren.length > 0) {
+            targetNode.children = [...(targetNode.children || []), ...popupChildren];
+            nextSelectedPath = targetPath;
+            changed = true;
+          }
+        }
+      }
+    } else if (action === "moveUp") {
+      if (canMoveNodeByPath(nextTreeRoot, targetPath, -1)) {
+        const parentPath = targetPath.slice(0, -1);
+        const parentNode = getNodeByPath(nextTreeRoot, parentPath);
+        const childIndex = targetPath[targetPath.length - 1];
+        const swapIndex = childIndex - 1;
+        const temp = parentNode.children[swapIndex];
+        parentNode.children[swapIndex] = parentNode.children[childIndex];
+        parentNode.children[childIndex] = temp;
+        nextSelectedPath = [...parentPath, swapIndex];
+        changed = true;
+      }
+    } else if (action === "moveDown") {
+      if (canMoveNodeByPath(nextTreeRoot, targetPath, 1)) {
+        const parentPath = targetPath.slice(0, -1);
+        const parentNode = getNodeByPath(nextTreeRoot, parentPath);
+        const childIndex = targetPath[targetPath.length - 1];
+        const swapIndex = childIndex + 1;
+        const temp = parentNode.children[swapIndex];
+        parentNode.children[swapIndex] = parentNode.children[childIndex];
+        parentNode.children[childIndex] = temp;
+        nextSelectedPath = [...parentPath, swapIndex];
+        changed = true;
+      }
+    } else if (action === "remove") {
+      if (!isRoot) {
+        const parentPath = targetPath.slice(0, -1);
+        const parentNode = getNodeByPath(nextTreeRoot, parentPath);
+        const childIndex = targetPath[targetPath.length - 1];
+        if (parentNode && Array.isArray(parentNode.children) && childIndex >= 0 && childIndex < parentNode.children.length) {
+          parentNode.children.splice(childIndex, 1);
+          nextSelectedPath = findPreviousSelectionPath(parentPath, childIndex);
+          changed = true;
+        }
+      }
+    } else if (action === "removePopupMenus") {
+      if (canRemovePopupMenusFromNode(targetNode)) {
+        const targetNode = getNodeByPath(nextTreeRoot, targetPath);
+        if (targetNode) {
+          const beforeCount = (targetNode.children || []).length;
+          targetNode.children = (targetNode.children || []).filter((child) => String(child?.tag || "").toUpperCase() !== "PIT");
+          if (targetNode.children.length !== beforeCount) {
+            nextSelectedPath = targetPath;
+            changed = true;
+          }
+        }
+      }
+    } else if (action === "appendMenuItem") {
+      const appendTag = resolveAppendChildTag(targetNode);
+      if (appendTag) {
+        const targetNode = getNodeByPath(nextTreeRoot, targetPath);
+        if (targetNode) {
+          const created = createMenuNodeForTag(appendTag);
+          const nextNode = assignSequenceIdsToNode(created, sequenceState, usedNames);
+          const appendIndex = (targetNode.children || []).length;
+          targetNode.children = [...(targetNode.children || []), nextNode];
+          nextSelectedPath = [...targetPath, appendIndex];
+          changed = true;
+        }
+      }
+    } else if (action === "appendPopupMenuItem") {
+      if (canAppendPopupMenuItemToNode(targetNode)) {
+        const targetNode = getNodeByPath(nextTreeRoot, targetPath);
+        if (targetNode) {
+          const created = createMenuNodeForTag("PIT");
+          const nextNode = assignSequenceIdsToNode(created, sequenceState, usedNames);
+          const appendIndex = (targetNode.children || []).length;
+          targetNode.children = [...(targetNode.children || []), nextNode];
+          nextSelectedPath = [...targetPath, appendIndex];
+          changed = true;
+        }
+      }
+    } else if (action === "insertBeforeMenuItem" || action === "insertAfterMenuItem") {
+      if (!isRoot) {
+        const parentPath = targetPath.slice(0, -1);
+        const parentNode = getNodeByPath(nextTreeRoot, parentPath);
+        const childIndex = targetPath[targetPath.length - 1];
+        if (parentNode && Array.isArray(parentNode.children)) {
+          const created = createMenuNodeForTag(targetNode.tag);
+          const nextNode = assignSequenceIdsToNode(created, sequenceState, usedNames);
+          const insertIndex = action === "insertBeforeMenuItem" ? childIndex : childIndex + 1;
+          parentNode.children.splice(insertIndex, 0, nextNode);
+          nextSelectedPath = [...parentPath, insertIndex];
+          changed = true;
+        }
+      }
+    }
+
+    if (!changed) {
+      setContextMenu(null);
+      return;
+    }
+
+    const rebuiltTree = rebuildMenuTreeIds(nextTreeRoot);
+    const nextSelectedId = nodeIdFromPath(nextSelectedPath);
+    const selectedExists = Boolean(findNodeById(rebuiltTree, nextSelectedId));
+    const finalSelectedId = selectedExists ? nextSelectedId : rebuiltTree.id;
+    const nextExpanded = expandTreePath(defaultExpandedNodes(rebuiltTree, 1), finalSelectedId);
+
+    setTreeRoot(rebuiltTree);
+    setSelectedNodeId(finalSelectedId);
+    setExpandedNodeIds(nextExpanded);
+    setMenuMeta((prev) => ({
+      ...(prev || {}),
+      QS: String(Math.max(parseSequenceNumber(prev?.QS), sequenceState.value)),
+    }));
+    setIsDirty(true);
+    setErrorText("");
+    setContextMenu(null);
+  }, [contextMenu?.nodeId, expandedNodeIds, menuMeta?.QS, treeClipboard, treeRoot]);
+
+  useEffect(() => {
+    const onDeleteKeyDown = (event) => {
+      if (event.key !== "Delete") return;
+
+      const target = event.target;
+      if (target instanceof Element && target.closest("input, textarea, select, [contenteditable=\"true\"]")) {
+        return;
+      }
+
+      if (!selectedNodeId) return;
+      event.preventDefault();
+      onTreeContextAction("remove", selectedNodeId);
+    };
+
+    window.addEventListener("keydown", onDeleteKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onDeleteKeyDown);
+    };
+  }, [onTreeContextAction, selectedNodeId]);
+
   const currentTreeSearchDisplay = treeSearchMatches.length > 0 && treeSearchIndex >= 0
     ? treeSearchIndex + 1
     : 0;
@@ -512,6 +806,122 @@ export function MenuEditor() {
         }}
         style={{ display: "none" }}
       />
+
+      {contextMenu && contextNode && (
+        <div
+          ref={contextMenuRef}
+          className="tree-context-menu"
+          style={{
+            left: `${contextMenu.x}px`,
+            top: `${contextMenu.y}px`,
+          }}
+        >
+          {(() => {
+            const nodePath = parseNodePath(contextNode.id) || [];
+            const isRoot = nodePath.length === 0;
+            const hasChildren = (contextNode.children || []).length > 0;
+            const isOpen = isRoot ? true : expandedNodeIds.has(contextNode.id);
+            const canCopy = !isRoot;
+            const canCut = !isRoot;
+            const canPasteSibling = canPasteToSibling(contextNode, treeClipboard);
+            const canPasteChild = canPasteChildToNode(contextNode, treeClipboard);
+            const showPopupMenuActions = canShowPopupMenuActions(contextNode);
+            const canPastePopupMenus = canPastePopupMenusToNode(contextNode, treeClipboard);
+            const canMoveUp = canMoveNodeByPath(treeRoot, nodePath, -1);
+            const canMoveDown = canMoveNodeByPath(treeRoot, nodePath, 1);
+            const canRemove = !isRoot;
+            const canRemovePopupMenus = canRemovePopupMenusFromNode(contextNode);
+            const canAppendMenuItem = canAppendMenuItemToNode(contextNode);
+            const canAppendPopupMenuItem = canAppendPopupMenuItemToNode(contextNode);
+            const canInsertSibling = !isRoot;
+            return (
+              <>
+                <button type="button" onClick={() => onTreeContextAction("expand")} disabled={!hasChildren || isOpen}>
+                  <span className="tree-context-item-icon tree-context-icon-expand" aria-hidden="true" />
+                  <span>Expand</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onTreeContextAction("collapse")}
+                  disabled={!hasChildren || !isOpen || isRoot}
+                >
+                  <span className="tree-context-item-icon tree-context-icon-collapse" aria-hidden="true" />
+                  <span>Collapse</span>
+                </button>
+
+                <span className="tree-context-separator" role="separator" />
+
+                <button type="button" onClick={() => onTreeContextAction("copy")} disabled={!canCopy}>
+                  <span className="tree-context-item-icon tree-context-icon-copy" aria-hidden="true" />
+                  <span>Copy</span>
+                </button>
+                <button type="button" onClick={() => onTreeContextAction("cut")} disabled={!canCut}>
+                  <span className="tree-context-item-icon tree-context-icon-cut" aria-hidden="true" />
+                  <span>Cut</span>
+                </button>
+                <button type="button" onClick={() => onTreeContextAction("pasteSibling")} disabled={!canPasteSibling}>
+                  <span className="tree-context-item-icon tree-context-icon-paste" aria-hidden="true" />
+                  <span>Paste Sibling</span>
+                </button>
+                <button type="button" onClick={() => onTreeContextAction("pasteChild")} disabled={!canPasteChild}>
+                  <span className="tree-context-item-icon tree-context-icon-paste" aria-hidden="true" />
+                  <span>Paste Child</span>
+                </button>
+                {showPopupMenuActions && (
+                  <button type="button" onClick={() => onTreeContextAction("pastePopupMenus")} disabled={!canPastePopupMenus}>
+                    <span className="tree-context-item-icon tree-context-icon-paste" aria-hidden="true" />
+                    <span>Paste Popup Menus</span>
+                  </button>
+                )}
+
+                <span className="tree-context-separator" role="separator" />
+
+                <button type="button" onClick={() => onTreeContextAction("moveUp")} disabled={!canMoveUp}>
+                  <span className="tree-context-item-icon tree-context-icon-move-up" aria-hidden="true" />
+                  <span>Move Up</span>
+                </button>
+                <button type="button" onClick={() => onTreeContextAction("moveDown")} disabled={!canMoveDown}>
+                  <span className="tree-context-item-icon tree-context-icon-move-down" aria-hidden="true" />
+                  <span>Move Down</span>
+                </button>
+
+                <span className="tree-context-separator" role="separator" />
+
+                <button type="button" onClick={() => onTreeContextAction("remove")} disabled={!canRemove}>
+                  <span className="tree-context-item-icon tree-context-icon-delete" aria-hidden="true" />
+                  <span>Remove</span>
+                </button>
+                {showPopupMenuActions && (
+                  <button type="button" onClick={() => onTreeContextAction("removePopupMenus")} disabled={!canRemovePopupMenus}>
+                    <span className="tree-context-item-icon tree-context-icon-delete" aria-hidden="true" />
+                    <span>Remove Popup Menus</span>
+                  </button>
+                )}
+                <button type="button" onClick={() => onTreeContextAction("insertBeforeMenuItem")} disabled={!canInsertSibling}>
+                  <span className="tree-context-item-icon tree-context-icon-insert-before" aria-hidden="true" />
+                  <span>Insert Before Menu Item</span>
+                </button>
+                <button type="button" onClick={() => onTreeContextAction("insertAfterMenuItem")} disabled={!canInsertSibling}>
+                  <span className="tree-context-item-icon tree-context-icon-insert-after" aria-hidden="true" />
+                  <span>Insert After Menu Item</span>
+                </button>
+                {canAppendMenuItem && (
+                  <button type="button" onClick={() => onTreeContextAction("appendMenuItem")}>
+                    <span className="tree-context-item-icon tree-context-icon-append" aria-hidden="true" />
+                    <span>Append Menu Item</span>
+                  </button>
+                )}
+                {showPopupMenuActions && (
+                  <button type="button" onClick={() => onTreeContextAction("appendPopupMenuItem")} disabled={!canAppendPopupMenuItem}>
+                    <span className="tree-context-item-icon tree-context-icon-append" aria-hidden="true" />
+                    <span>Append Popup Menu Item</span>
+                  </button>
+                )}
+              </>
+            );
+          })()}
+        </div>
+      )}
 
       <section className="panel MenuEditor-panel">
         <div className="MenuEditor-file-actions-wrap">
@@ -624,6 +1034,13 @@ export function MenuEditor() {
                     aria-selected={isSelected}
                     aria-expanded={hasChildren ? isExpanded : undefined}
                     onClick={() => setSelectedNodeId(row.node.id)}
+                    onContextMenu={(event) => onOpenContextMenu(event, row.node.id)}
+                    onDoubleClick={(event) => {
+                      if (!hasChildren) return;
+                      const target = event.target;
+                      if (target instanceof Element && target.closest(".MenuEditor-tree-toggle")) return;
+                      onToggleNode(row.node.id);
+                    }}
                   >
                     {hasChildren ? (
                       <button
@@ -714,6 +1131,233 @@ export function MenuEditor() {
       </section>
     </>
   );
+}
+
+function parseNodePath(nodeId) {
+  const text = String(nodeId || "").trim();
+  if (!text) return null;
+  const parts = text.split(".");
+  if (parts[0] !== "mnu") return null;
+  if (parts.length === 1) return [];
+
+  const path = [];
+  for (let index = 1; index < parts.length; index += 1) {
+    const parsed = Number.parseInt(parts[index], 10);
+    if (!Number.isFinite(parsed) || parsed <= 0) return null;
+    path.push(parsed - 1);
+  }
+  return path;
+}
+
+function nodeIdFromPath(path) {
+  if (!Array.isArray(path) || path.length === 0) return "mnu";
+  return `mnu.${path.map((value) => value + 1).join(".")}`;
+}
+
+function parseSequenceNumber(value) {
+  const parsed = Number.parseInt(String(value ?? "0"), 10);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function cloneMenuTreeNode(node) {
+  if (!node) return node;
+  return {
+    ...node,
+    attributes: { ...(node.attributes || {}) },
+    children: (node.children || []).map((child) => cloneMenuTreeNode(child)),
+  };
+}
+
+function rebuildMenuTreeIds(node, nodeId = "mnu") {
+  if (!node) return null;
+  return {
+    ...node,
+    id: nodeId,
+    children: (node.children || []).map((child, index) => rebuildMenuTreeIds(child, `${nodeId}.${index + 1}`)),
+  };
+}
+
+function getNodeByPath(root, path) {
+  if (!root) return null;
+  let cursor = root;
+  for (const childIndex of path || []) {
+    const index = Number(childIndex);
+    const children = cursor.children || [];
+    if (!Number.isFinite(index) || index < 0 || index >= children.length) return null;
+    cursor = children[index];
+  }
+  return cursor;
+}
+
+function findPreviousSelectionPath(parentPath, childIndex) {
+  if (childIndex > 0) return [...parentPath, childIndex - 1];
+  return [...parentPath];
+}
+
+function canMoveNodeByPath(root, path, direction) {
+  if (!Array.isArray(path) || path.length === 0) return false;
+  const parentPath = path.slice(0, -1);
+  const parentNode = getNodeByPath(root, parentPath);
+  if (!parentNode) return false;
+
+  const childIndex = path[path.length - 1];
+  const nextIndex = childIndex + direction;
+  const siblings = parentNode.children || [];
+  return nextIndex >= 0 && nextIndex < siblings.length;
+}
+
+function canPasteToSibling(targetNode, clipboard) {
+  if (!targetNode || !clipboard?.node) return false;
+  const targetTag = String(targetNode.tag || "").toUpperCase();
+  if (targetTag === "MNU") return false;
+  return String(clipboard.tag || "").toUpperCase() === targetTag;
+}
+
+function canPasteChildToNode(targetNode, clipboard) {
+  if (!targetNode || !clipboard?.node) return false;
+  const targetTag = String(targetNode.tag || "").toUpperCase();
+  const clipTag = String(clipboard.tag || "").toUpperCase();
+
+  if (targetTag === "MNU") return clipTag === "MSY";
+  if (targetTag === "MSY") return clipTag === "MIT";
+  if (targetTag === "MIT") {
+    if (clipTag === "MIT") return !hasDirectChildTag(targetNode, "PIT");
+    if (clipTag === "PIT") return !hasDirectChildTag(targetNode, "MIT");
+    return false;
+  }
+  return false;
+}
+
+function canShowPopupMenuActions(targetNode) {
+  const targetTag = String(targetNode?.tag || "").toUpperCase();
+  if (targetTag !== "MIT") return false;
+  return !hasDirectChildTag(targetNode, "MIT");
+}
+
+function canPastePopupMenusToNode(targetNode, clipboard) {
+  if (!canShowPopupMenuActions(targetNode)) return false;
+  if (!clipboard?.node) return false;
+  if (String(clipboard.tag || "").toUpperCase() !== "MIT") return false;
+  if (hasDirectChildTag(targetNode, "PIT")) return false;
+  return hasDirectChildTag(clipboard.node, "PIT");
+}
+
+function canRemovePopupMenusFromNode(targetNode) {
+  if (!canShowPopupMenuActions(targetNode)) return false;
+  return hasDirectChildTag(targetNode, "PIT");
+}
+
+function canAppendMenuItemToNode(targetNode) {
+  return Boolean(resolveAppendChildTag(targetNode));
+}
+
+function canAppendPopupMenuItemToNode(targetNode) {
+  const targetTag = String(targetNode?.tag || "").toUpperCase();
+  if (targetTag !== "MIT") return false;
+  return !hasDirectChildTag(targetNode, "MIT");
+}
+
+function resolveAppendChildTag(targetNode) {
+  const targetTag = String(targetNode?.tag || "").toUpperCase();
+  if (targetTag === "MNU") return "MSY";
+  if (targetTag === "MSY") return "MIT";
+  if (targetTag === "MIT" && !hasDirectChildTag(targetNode, "PIT")) return "MIT";
+  return "";
+}
+
+function hasDirectChildTag(node, tag) {
+  const targetTag = String(tag || "").toUpperCase();
+  return (node?.children || []).some((child) => String(child?.tag || "").toUpperCase() === targetTag);
+}
+
+function createMenuNodeForTag(tag) {
+  const nextTag = String(tag || "").toUpperCase();
+  return {
+    id: "",
+    tag: nextTag,
+    attributes: createDefaultAttributesByTag(nextTag),
+    children: [],
+  };
+}
+
+function createDefaultAttributesByTag(tag) {
+  const attributes = {};
+  const keys = NODE_PROPERTY_KEYS_BY_TAG[tag] || ["_S", "NM"];
+  for (const key of keys) {
+    if (key === "_S") {
+      attributes._S = "0";
+      continue;
+    }
+    attributes[key] = resolvePropertyDefaultValue(key);
+  }
+  if (!Object.prototype.hasOwnProperty.call(attributes, "_S")) {
+    attributes._S = "0";
+  }
+  if (!Object.prototype.hasOwnProperty.call(attributes, "NM")) {
+    attributes.NM = "";
+  }
+  return attributes;
+}
+
+function collectUsedMenuNames(root) {
+  const used = new Set();
+  const walk = (node) => {
+    if (!node) return;
+    const tag = String(node.tag || "").toUpperCase();
+    if (tag === "MSY" || tag === "MIT") {
+      const name = String(node?.attributes?.NM ?? "").trim();
+      if (name) used.add(name);
+    }
+    for (const child of node.children || []) {
+      walk(child);
+    }
+  };
+  walk(root);
+  return used;
+}
+
+function ensureUniqueNodeName(name, fallbackName, usedNames) {
+  let candidate = String(name || "").trim() || String(fallbackName || "").trim();
+  if (!usedNames || !candidate) return candidate;
+  if (!usedNames.has(candidate)) return candidate;
+
+  const baseName = candidate;
+  let suffix = 2;
+  while (usedNames.has(`${baseName}_${suffix}`)) {
+    suffix += 1;
+  }
+  return `${baseName}_${suffix}`;
+}
+
+function assignSequenceIdsToNode(node, sequenceState, usedNames) {
+  const next = cloneMenuTreeNode(node);
+  const nextSeq = Math.max(0, Number(sequenceState?.value || 0)) + 1;
+  sequenceState.value = nextSeq;
+
+  const tag = String(next.tag || "").toUpperCase();
+  const attributes = {
+    ...(next.attributes || {}),
+    _S: String(nextSeq),
+  };
+
+  if (tag === "MSY") {
+    const ensuredName = ensureUniqueNodeName(attributes.NM, `NewSystem_${nextSeq}`, usedNames);
+    attributes.NM = ensuredName;
+    if (ensuredName) usedNames.add(ensuredName);
+  } else if (tag === "MIT") {
+    const ensuredName = ensureUniqueNodeName(attributes.NM, `NewMenu_${nextSeq}`, usedNames);
+    attributes.NM = ensuredName;
+    if (ensuredName) usedNames.add(ensuredName);
+  } else if (tag === "PIT") {
+    const name = String(attributes.NM ?? "").trim();
+    if (!name) {
+      attributes.NM = `NewPopupMenu_${nextSeq}`;
+    }
+  }
+
+  next.attributes = attributes;
+  next.children = (next.children || []).map((child) => assignSequenceIdsToNode(child, sequenceState, usedNames));
+  return next;
 }
 
 function parseMenuTree(xmlText) {
