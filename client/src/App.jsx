@@ -5,6 +5,7 @@ import { RibbonIcon } from "./components/RibbonIcon";
 import { OptionDialog } from "./components/OptionDialog";
 import { MenuEditor } from "./menuEditor/MenuEditor";
 import { LanguageEditor } from "./languageEditor/LanguageEditor";
+import { ClientConfigEditor } from "./clientConfigEditor/ClientConfigEditor";
 import { ToolsManual } from "./manual/ToolsManual";
 import { QueryDeveloperPanel } from "./queryDeveloper/QueryDeveloperPanel";
 import {
@@ -1142,6 +1143,8 @@ function App() {
         <MenuEditor />
       ) : activeModule === "language" ? (
         <LanguageEditor />
+      ) : activeModule === "clientConfig" ? (
+        <ClientConfigEditor />
       ) : activeModule === "manual" ? (
         <ToolsManual />
       ) : activeModule !== "queryDeveloper" ? (
