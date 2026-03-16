@@ -50,7 +50,7 @@ export function LanguageEditor() {
   const fileInputRef = useRef(null);
   const propertyScrollRef = useRef(null);
 
-  const [selectedFile, setSelectedFile] = useState({ name: "Language.lng" });
+  const [selectedFile, setSelectedFile] = useState(null);
   const [fileHandle, setFileHandle] = useState(null);
   const [languageMeta, setLanguageMeta] = useState(() => createDefaultLanguageMeta(new Date()));
   const [languageData, setLanguageData] = useState(() => createDefaultLanguageData());
