@@ -182,6 +182,7 @@ const ROOT_META_ORDER = ["QF", "QV", "QC", "QU", "QD", "QS"];
 export function MenuEditor() {
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
+  const treeScrollRef = useRef(null);
   const propertyScrollRef = useRef(null);
   const contextMenuRef = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -527,6 +528,77 @@ export function MenuEditor() {
     setSelectedNodeId(targetNodeId);
     setExpandedNodeIds((prev) => expandTreePath(prev, targetNodeId));
   }, [treeSearchMatches, treeSearchIndex, onSearchTree]);
+
+  const onTreeKeyDown = useCallback((event) => {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    const key = String(event.key || "");
+    if (key !== "ArrowLeft" && key !== "ArrowRight" && key !== "ArrowUp" && key !== "ArrowDown") return;
+    if (!treeRows.length) return;
+
+    const selectedIndex = treeRows.findIndex((row) => row.node.id === selectedNodeId);
+    if (selectedIndex < 0) {
+      const fallbackRow = key === "ArrowUp" ? treeRows[treeRows.length - 1] : treeRows[0];
+      if (!fallbackRow) return;
+      event.preventDefault();
+      setSelectedNodeId(fallbackRow.node.id);
+      return;
+    }
+
+    const activeRow = treeRows[selectedIndex];
+    const activeNode = activeRow.node;
+    const activeNodeId = activeNode.id;
+    const hasChildren = (activeNode.children || []).length > 0;
+    const isExpanded = activeRow.depth === 0 || expandedNodeIds.has(activeNodeId);
+
+    if (key === "ArrowDown") {
+      if (selectedIndex >= treeRows.length - 1) return;
+      event.preventDefault();
+      setSelectedNodeId(treeRows[selectedIndex + 1].node.id);
+      return;
+    }
+
+    if (key === "ArrowUp") {
+      if (selectedIndex <= 0) return;
+      event.preventDefault();
+      setSelectedNodeId(treeRows[selectedIndex - 1].node.id);
+      return;
+    }
+
+    if (key === "ArrowRight") {
+      event.preventDefault();
+      if (!hasChildren) return;
+      if (!isExpanded) {
+        setExpandedNodeIds((prev) => {
+          const next = new Set(prev);
+          next.add(activeNodeId);
+          return next;
+        });
+        return;
+      }
+
+      const nextRow = treeRows[selectedIndex + 1];
+      if (nextRow && nextRow.depth === activeRow.depth + 1) {
+        setSelectedNodeId(nextRow.node.id);
+      }
+      return;
+    }
+
+    if (key === "ArrowLeft") {
+      event.preventDefault();
+      if (hasChildren && isExpanded && activeRow.depth > 0) {
+        setExpandedNodeIds((prev) => {
+          const next = new Set(prev);
+          next.delete(activeNodeId);
+          return next;
+        });
+        return;
+      }
+
+      const path = parseNodePath(activeNodeId);
+      if (!path || path.length === 0) return;
+      setSelectedNodeId(nodeIdFromPath(path.slice(0, -1)));
+    }
+  }, [expandedNodeIds, selectedNodeId, treeRows]);
 
   const onOpenContextMenu = useCallback((event, nodeId) => {
     event.preventDefault();
@@ -1017,7 +1089,14 @@ export function MenuEditor() {
                 </button>
               </div>
             </div>
-            <div className="MenuEditor-tree-scroll" role="tree" aria-label="Menu tree">
+            <div
+              ref={treeScrollRef}
+              className="MenuEditor-tree-scroll"
+              role="tree"
+              aria-label="Menu tree"
+              tabIndex={0}
+              onKeyDown={onTreeKeyDown}
+            >
               {treeRows.map((row) => {
                 const hasChildren = (row.node.children || []).length > 0;
                 const isExpanded = expandedNodeIds.has(row.node.id);
@@ -1033,7 +1112,12 @@ export function MenuEditor() {
                     aria-level={row.depth + 1}
                     aria-selected={isSelected}
                     aria-expanded={hasChildren ? isExpanded : undefined}
-                    onClick={() => setSelectedNodeId(row.node.id)}
+                    onClick={() => {
+                      setSelectedNodeId(row.node.id);
+                      if (treeScrollRef.current) {
+                        treeScrollRef.current.focus();
+                      }
+                    }}
                     onContextMenu={(event) => onOpenContextMenu(event, row.node.id)}
                     onDoubleClick={(event) => {
                       if (!hasChildren) return;
@@ -1057,9 +1141,12 @@ export function MenuEditor() {
                     ) : (
                       <span className="MenuEditor-tree-toggle MenuEditor-tree-toggle-spacer" />
                     )}
-                    <span className={`MenuEditor-tree-tag tag-${row.node.tag.toLowerCase()}`}>
+                    <span
+                      className={`MenuEditor-tree-tag tag-${row.node.tag.toLowerCase()}`}
+                      title={row.node.tag}
+                      aria-hidden="true"
+                    >
                       <img src={TREE_ICON_MAP[row.node.tag] || TREE_ICON_MAP.MIT} alt="" />
-                      <span>{row.node.tag}</span>
                     </span>
                     <span className="MenuEditor-tree-text">{formatNodeTitle(row.node)}</span>
                   </div>

@@ -10,6 +10,8 @@ const UPDATE_ICON_SRC = "/icons/languageEditor/ToolCheck.png";
 const DELETE_ICON_SRC = "/icons/languageEditor/ToolRemove.png";
 const GOTO_ERROR_ICON_SRC = "/icons/languageEditor/ToolGotoError.png";
 const GEN_ENUM_ICON_SRC = "/icons/languageEditor/ToolEnumGenerate.png";
+const TOOL_LANGUAGE_ICON_SRC = "/icons/languageEditor/ToolLanguage.png";
+const TOOL_MESSAGE_ICON_SRC = "/icons/languageEditor/ToolMessage.png";
 
 const CAPTION_PROPERTY_GROUPS = [
   { key: "general", title: "[01] General", rows: [{ key: "DEF", label: "Default", multiline: false }] },
@@ -48,6 +50,7 @@ const MESSAGE_PROPERTY_GROUPS = [
 
 export function LanguageEditor() {
   const fileInputRef = useRef(null);
+  const treeScrollRef = useRef(null);
   const propertyScrollRef = useRef(null);
 
   const [selectedFile, setSelectedFile] = useState(null);
@@ -132,6 +135,37 @@ export function LanguageEditor() {
   useEffect(() => {
     setMessageGotoErrorIndex(0);
   }, [messageDuplicateValues.join("\u0001")]);
+
+  useEffect(() => {
+    if (treeSearchIndex < 0 || !selectedNodeId) return;
+    const container = treeScrollRef.current;
+    if (!container) return;
+
+    const rows = container.querySelectorAll(".LanguageEditor-tree-row[data-node-id]");
+    let targetRow = null;
+    for (const row of rows) {
+      if (row.getAttribute("data-node-id") === selectedNodeId) {
+        targetRow = row;
+        break;
+      }
+    }
+    if (!targetRow) return;
+
+    const stickyHeader = container.querySelector(".LanguageEditor-caption-head, .LanguageEditor-message-head");
+    const stickyHeaderHeight = stickyHeader instanceof HTMLElement ? stickyHeader.offsetHeight : 0;
+    const containerRect = container.getBoundingClientRect();
+    const rowRect = targetRow.getBoundingClientRect();
+    const rowTopInContent = container.scrollTop + (rowRect.top - containerRect.top);
+    const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight);
+    const nextScrollTop = Math.min(
+      maxScrollTop,
+      Math.max(0, rowTopInContent - stickyHeaderHeight - 2),
+    );
+    container.scrollTop = nextScrollTop;
+    if (typeof container.focus === "function") {
+      container.focus({ preventScroll: true });
+    }
+  }, [activeTab, selectedNodeId, treeSearchIndex, visibleRows.length]);
 
   const onCreateLanguageFile = useCallback(() => {
     setSelectedFile({ name: "Language.lng" });
@@ -427,37 +461,29 @@ export function LanguageEditor() {
       setTreeSearchQuery("");
       setTreeSearchMatches([]);
       setTreeSearchIndex(-1);
+      setSelectedNodeId(activeTab === "message" ? "Q.MG" : "Q.CG");
       return;
     }
 
-    const isSameQuery = keyword === treeSearchQuery;
-    let matches = treeSearchMatches;
-    let nextIndex = treeSearchIndex;
+    const matches = visibleRows
+      .filter((row) => {
+        if (!row?.node) return false;
+        const source = `${String(row.node.tag || "")} ${String(row.node.label || "")} ${String(row.node.searchText || "")}`;
+        return normalizeSearchText(source).includes(keyword);
+      })
+      .map((row) => row.node.id);
 
-    if (!isSameQuery || !matches.length) {
-      matches = visibleRows
-        .filter((row) => {
-          if (!row?.node) return false;
-          const source = `${String(row.node.tag || "")} ${String(row.node.label || "")} ${String(row.node.searchText || "")}`;
-          return normalizeSearchText(source).includes(keyword);
-        })
-        .map((row) => row.node.id);
-      setTreeSearchQuery(keyword);
-      setTreeSearchMatches(matches);
-      if (!matches.length) {
-        setTreeSearchIndex(-1);
-        return;
-      }
-      nextIndex = 0;
-    } else {
-      const base = treeSearchIndex >= 0 ? treeSearchIndex : -1;
-      nextIndex = (base + 1) % matches.length;
+    setTreeSearchQuery(keyword);
+    setTreeSearchMatches(matches);
+    if (!matches.length) {
+      setTreeSearchIndex(-1);
+      return;
     }
 
-    const targetNodeId = matches[nextIndex];
-    setTreeSearchIndex(nextIndex);
+    const targetNodeId = matches[0];
+    setTreeSearchIndex(0);
     setSelectedNodeId(targetNodeId);
-  }, [treeSearchDraft, treeSearchIndex, treeSearchMatches, treeSearchQuery, visibleRows]);
+  }, [activeTab, treeSearchDraft, visibleRows]);
 
   const onMoveTreeSearch = useCallback((step) => {
     if (!treeSearchMatches.length) {
@@ -562,7 +588,7 @@ export function LanguageEditor() {
         {errorText ? <p className="error-text LanguageEditor-inline-error">{errorText}</p> : null}
 
         <div className="LanguageEditor-workspace">
-          <section className="LanguageEditor-tree-panel">
+          <section className={`LanguageEditor-tree-panel${activeTab === "caption" ? " caption-mode" : activeTab === "message" ? " message-mode" : ""}`}>
             <div className="LanguageEditor-tab-strip" role="tablist" aria-label="Language tabs">
               <button
                 type="button"
@@ -597,6 +623,7 @@ export function LanguageEditor() {
                       setTreeSearchQuery("");
                       setTreeSearchMatches([]);
                       setTreeSearchIndex(-1);
+                      setSelectedNodeId(activeTab === "message" ? "Q.MG" : "Q.CG");
                     }
                   }}
                   onKeyDown={(event) => {
@@ -635,27 +662,70 @@ export function LanguageEditor() {
               </div>
             </div>
 
-            <div className="LanguageEditor-tree-scroll" role="listbox" aria-label="Language rows">
+            <div
+              ref={treeScrollRef}
+              className={`LanguageEditor-tree-scroll${activeTab === "caption" ? " caption-mode" : activeTab === "message" ? " message-mode" : ""}`}
+              role="listbox"
+              aria-label="Language rows"
+              tabIndex={0}
+            >
+              {activeTab === "caption" ? (
+                <div className="LanguageEditor-caption-head" aria-hidden="true">
+                  <span>DEF</span>
+                  <span>ENG</span>
+                </div>
+              ) : activeTab === "message" ? (
+                <div className="LanguageEditor-message-head" aria-hidden="true">
+                  <span>Message ID</span>
+                  <span>DEF</span>
+                  <span>ENG</span>
+                </div>
+              ) : null}
               {visibleRows.map((row) => {
                 const isSelected = selectedNode?.id === row.node.id;
                 const isMatched = treeSearchHighlightSet.has(row.node.id);
                 return (
                   <div
                     key={row.node.id}
-                    className={`LanguageEditor-tree-row${isSelected ? " selected" : ""}${isMatched ? " matched" : ""}`}
-                    style={{ paddingLeft: "8px" }}
+                    data-node-id={row.node.id}
+                    className={`LanguageEditor-tree-row${activeTab === "caption" ? " LanguageEditor-tree-row-caption" : activeTab === "message" ? " LanguageEditor-tree-row-message" : ""}${isSelected ? " selected" : ""}${isMatched ? " matched" : ""}`}
                     role="option"
                     aria-selected={isSelected}
                     onClick={() => {
                       setSelectedNodeId(row.node.id);
                     }}
                   >
-                    <span className={`LanguageEditor-tree-tag ${activeTab === "message" ? "tag-m" : "tag-c"}`}>
-                      {row.node.tag}
-                    </span>
-                    <span className="LanguageEditor-tree-text" title={row.node.label}>
-                      {row.node.label}
-                    </span>
+                    {activeTab === "caption" ? (
+                      <>
+                        <span className="LanguageEditor-caption-col LanguageEditor-caption-col-def" title={row.node.defText || ""}>
+                          <span className="LanguageEditor-caption-def-wrap">
+                            <img src={TOOL_LANGUAGE_ICON_SRC} alt="" className="LanguageEditor-caption-lang-icon" />
+                            <span>{row.node.defText || ""}</span>
+                          </span>
+                        </span>
+                        <span className="LanguageEditor-caption-col LanguageEditor-caption-col-eng" title={row.node.engText || ""}>{row.node.engText || ""}</span>
+                      </>
+                    ) : activeTab === "message" ? (
+                      <>
+                        <span className="LanguageEditor-message-col LanguageEditor-message-col-id" title={row.node.midText || ""}>
+                          <span className="LanguageEditor-message-id-wrap">
+                            <img src={TOOL_MESSAGE_ICON_SRC} alt="" className="LanguageEditor-message-icon" />
+                            <span>{row.node.midText || ""}</span>
+                          </span>
+                        </span>
+                        <span className="LanguageEditor-message-col LanguageEditor-message-col-def" title={row.node.defText || ""}>{row.node.defText || ""}</span>
+                        <span className="LanguageEditor-message-col LanguageEditor-message-col-eng" title={row.node.engText || ""}>{row.node.engText || ""}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className={`LanguageEditor-tree-tag ${activeTab === "message" ? "tag-m" : "tag-c"}`}>
+                          {row.node.tag}
+                        </span>
+                        <span className="LanguageEditor-tree-text" title={row.node.label}>
+                          {row.node.label}
+                        </span>
+                      </>
+                    )}
                   </div>
                 );
               })}
@@ -725,6 +795,8 @@ function buildLanguageTree(data) {
   const captionNodes = captions.map((item, index) => ({
     id: `Q.CG.${index + 1}`,
     tag: "C",
+    defText: formatCaptionDefText(item),
+    engText: formatCaptionEngText(item),
     label: formatCaptionNodeTitle(item),
     searchText: `${item.DEF || ""} ${item.ENG || ""} ${item.KOR || ""} ${item.CHN || ""} ${item.DEC || ""}`,
     children: [],
@@ -733,6 +805,9 @@ function buildLanguageTree(data) {
   const messageNodes = messages.map((item, index) => ({
     id: `Q.MG.${index + 1}`,
     tag: "M",
+    midText: formatMessageIdText(item),
+    defText: formatMessageDefText(item),
+    engText: formatMessageEngText(item),
     label: formatMessageNodeTitle(item),
     searchText: `${item.MID || ""} ${item.DEF || ""} ${item.ENG || ""} ${item.KOR || ""} ${item.CHN || ""} ${item.DEC || ""}`,
     children: [],
@@ -763,21 +838,41 @@ function buildLanguageTree(data) {
 }
 
 function formatCaptionNodeTitle(item) {
-  const def = String(item?.DEF || "").trim();
-  const title = firstNonEmpty(item?.ENG, item?.KOR, item?.CHN, item?.DEF);
-  if (def && title) return `[${def}] ${title}`;
-  if (def) return `[${def}]`;
-  if (title) return title;
+  const def = formatCaptionDefText(item);
+  const eng = formatCaptionEngText(item);
+  if (def && eng) return `${def} ${eng}`;
+  if (def) return def;
+  if (eng) return eng;
   return "(empty caption)";
 }
 
+function formatCaptionDefText(item) {
+  return String(item?.DEF || "").trim();
+}
+
+function formatCaptionEngText(item) {
+  return String(item?.ENG || "").trim();
+}
+
 function formatMessageNodeTitle(item) {
-  const messageId = String(item?.MID || "").trim();
-  const title = firstNonEmpty(item?.DEF, item?.ENG, item?.KOR, item?.CHN);
+  const messageId = formatMessageIdText(item);
+  const title = firstNonEmpty(formatMessageDefText(item), formatMessageEngText(item), item?.KOR, item?.CHN);
   if (messageId && title) return `[${messageId}] ${title}`;
   if (messageId) return `[${messageId}]`;
   if (title) return title;
   return "(empty message)";
+}
+
+function formatMessageIdText(item) {
+  return String(item?.MID || "").trim();
+}
+
+function formatMessageDefText(item) {
+  return String(item?.DEF || "").trim();
+}
+
+function formatMessageEngText(item) {
+  return String(item?.ENG || "").trim();
 }
 
 function flattenLanguageRows(root, expandedNodeIds) {

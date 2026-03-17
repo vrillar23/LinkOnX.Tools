@@ -291,6 +291,12 @@
   flex: 1;
 }
 
+.MenuEditor-tree-scroll:focus,
+.MenuEditor-tree-scroll:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 .MenuEditor-tree-row {
   display: flex;
   align-items: center;
@@ -336,38 +342,38 @@
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  gap: 0.26rem;
-  border-radius: 999px;
-  padding: 0.14rem 0.44rem;
-  font-size: 0.72rem;
-  line-height: 1.1;
-  font-weight: 700;
+  justify-content: center;
+  border-radius: 0;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  background: transparent;
 }
 
 .MenuEditor-tree-tag img {
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
   object-fit: contain;
 }
 
 .MenuEditor-tree-tag.tag-mnu {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: transparent;
+  color: inherit;
 }
 
 .MenuEditor-tree-tag.tag-msy {
-  background: #dcfce7;
-  color: #166534;
+  background: transparent;
+  color: inherit;
 }
 
 .MenuEditor-tree-tag.tag-mit {
-  background: #fef3c7;
-  color: #92400e;
+  background: transparent;
+  color: inherit;
 }
 
 .MenuEditor-tree-tag.tag-pit {
-  background: #fce7f3;
-  color: #9d174d;
+  background: transparent;
+  color: inherit;
 }
 
 .MenuEditor-tree-text {

@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./ClientConfigEditor.css";
 
 const NEW_ICON_SRC = "/icons/menuEditor/new_16x16.png";
@@ -24,23 +24,23 @@ const CLIENT_CATEGORIES = [
 const CLIENT_GROUPS = {
   general: [
     { title: "[01] Language", fields: [{ key: "language", label: "Language", type: "enum", options: LANGUAGE_OPTIONS, aliases: ["LNG", "LAN"], defaultValue: "DEF" }] },
-    { title: "[02] Font", fields: [{ key: "fontName", label: "Font Name", type: "text", aliases: ["FNM", "FON"], defaultValue: "" }, { key: "fontSize", label: "Font Size", type: "number", aliases: ["FSZ", "FOS"], defaultValue: "8.25" }] },
-    { title: "[03] Skin", fields: [{ key: "skinName", label: "Skin Name", type: "text", aliases: ["SKN"], defaultValue: "" }] },
-    { title: "[04] Debug Log", fields: [{ key: "debugLogFileSubfix", label: "File Subfix", type: "text", aliases: ["DLS", "DLSF"], defaultValue: "" }, { key: "debugLogFileKeepingPeriod", label: "File Keeping Period (Day)", type: "number", aliases: ["DLK", "DLKP"], defaultValue: "0" }] },
-    { title: "[05] Addition", fields: [{ key: "defaultSearchPeriod", label: "Default Search Period", type: "number", aliases: ["DSP"], defaultValue: "0" }, { key: "findBehavior", label: "Find Behavior", type: "enum", options: FIND_BEHAVIOR_OPTIONS, aliases: ["FBH", "FBD"], defaultValue: "Search" }, { key: "alertEnable", label: "Alert Enable", type: "bool", options: BOOL_OPTIONS, aliases: ["ALE"], defaultValue: "True" }] },
-    { title: "[06] Security", fields: [{ key: "usedScreenLock", label: "Used Screen Lock", type: "yesNo", options: YES_NO_OPTIONS, aliases: ["SCL", "USL"], defaultValue: "No" }, { key: "screenInactivityTimeout", label: "Inactivity Timeout", type: "number", aliases: ["SCTO", "SITM"], defaultValue: "0", visibleWhen: (ctx) => ctx.usedScreenLock === "Yes" }] },
+    { title: "[02] Font", fields: [{ key: "fontName", label: "Font Name", type: "text", aliases: ["FNM", "FON"], defaultValue: "Verdana" }, { key: "fontSize", label: "Font Size", type: "number", aliases: ["FSZ", "FOS"], defaultValue: "8.25" }] },
+    { title: "[03] Skin", fields: [{ key: "skinName", label: "Skin Name", type: "text", aliases: ["SKN"], defaultValue: "Basic" }] },
+    { title: "[04] Debug Log", fields: [{ key: "debugLogFileSubfix", label: "File Subfix", type: "text", aliases: ["DLS", "DLSF"], defaultValue: "QClient" }, { key: "debugLogFileKeepingPeriod", label: "File Keeping Period (Day)", type: "number", aliases: ["DLK", "DLKP"], defaultValue: "30" }] },
+    { title: "[05] Addition", fields: [{ key: "defaultSearchPeriod", label: "Default Search Period", type: "number", aliases: ["DSP"], defaultValue: "7" }, { key: "findBehavior", label: "Find Behavior", type: "enum", options: FIND_BEHAVIOR_OPTIONS, aliases: ["FBH", "FBD"], defaultValue: "Search" }, { key: "alertEnable", label: "Alert Enable", type: "bool", options: BOOL_OPTIONS, aliases: ["ALE"], defaultValue: "True" }] },
+    { title: "[06] Security", fields: [{ key: "usedScreenLock", label: "Used Screen Lock", type: "yesNo", options: YES_NO_OPTIONS, aliases: ["SCL", "USL"], defaultValue: "No" }, { key: "screenInactivityTimeout", label: "Inactivity Timeout", type: "number", aliases: ["SCTO", "SITM"], defaultValue: "10", visibleWhen: (ctx) => ctx.usedScreenLock === "Yes" }] },
   ],
   log: [{ title: "[01] Color", fields: [{ key: "flowFontColor", label: "Flow", type: "text", aliases: ["FFC"], defaultValue: "Black" }, { key: "commentFontColor", label: "Comment", type: "text", aliases: ["CFC"], defaultValue: "DarkGreen" }, { key: "messageReceivedFontColor", label: "Received", type: "text", aliases: ["RFC"], defaultValue: "DarkRed" }, { key: "messageSentFontColor", label: "Sent", type: "text", aliases: ["SFC"], defaultValue: "Blue" }] }],
-  appUpdate: [{ title: "[01] Client Update", fields: [{ key: "isNetworkDeployed", label: "Network Deployed", type: "yesNo", options: YES_NO_OPTIONS, aliases: ["NDPLY", "AUD"], defaultValue: "No" }, { key: "appUrl", label: "Application URL", type: "text", aliases: ["APUR", "UDU", "PURL"], defaultValue: "", visibleWhen: (ctx) => ctx.isNetworkDeployed === "Yes" }, { key: "updateCheckPeriod", label: "Update Check Period (min)", type: "number", aliases: ["UCKP", "UCP"], defaultValue: "0", visibleWhen: (ctx) => ctx.isNetworkDeployed === "Yes" }] }],
+  appUpdate: [{ title: "[01] Client Update", fields: [{ key: "isNetworkDeployed", label: "Network Deployed", type: "yesNo", options: YES_NO_OPTIONS, aliases: ["NDPLY"], defaultValue: "No" }, { key: "appUrl", label: "Application URL", type: "text", aliases: ["APUR", "UDU", "PURL"], defaultValue: "", visibleWhen: (ctx) => ctx.isNetworkDeployed === "Yes" }, { key: "updateCheckPeriod", label: "Update Check Period (min)", type: "number", aliases: ["UCKP", "UCP"], defaultValue: "0", visibleWhen: (ctx) => ctx.isNetworkDeployed === "Yes" }] }],
 };
 const FTP_VISIBLE = (values) => normalizeBoolValue(values.ftpAnonymous, "True") === "False";
-const makeTab = (id, alias) => ({
+const makeTab = (id, alias, defaults = {}) => ({
   id,
   label: id,
   groups: [
-    { title: "[01] Middleware", fields: [{ key: "messageBroker", label: "Message Broker", type: "enum", options: MESSAGE_BROKER_OPTIONS, aliases: [alias.mb], defaultValue: "ActiveMQ" }, { key: "connectionString", label: "Connection String", type: "text", aliases: [alias.cs], defaultValue: "" }, { key: "timeout", label: "Timeout (sec)", type: "number", aliases: [alias.tc], defaultValue: "0" }] },
-    { title: "[02] Channel", fields: [{ key: "tuneChannelId", label: "Tune Channel", type: "text", aliases: [alias.ti], defaultValue: "" }, { key: "castChannelId", label: "Cast Channel", type: "text", aliases: [alias.cc], defaultValue: "" }] },
-    { title: "[03] Ftp", fields: [{ key: "ftpIp", label: "IP", type: "text", aliases: [alias.fi], defaultValue: "" }, { key: "ftpAnonymous", label: "Used Anonymous", type: "bool", options: BOOL_OPTIONS, aliases: [alias.ua], defaultValue: "True" }, { key: "ftpUserId", label: "User ID", type: "text", aliases: [alias.fu], defaultValue: "", visibleWhen: FTP_VISIBLE }] },
+    { title: "[01] Middleware", fields: [{ key: "messageBroker", label: "Message Broker", type: "enum", options: MESSAGE_BROKER_OPTIONS, aliases: [alias.mb], defaultValue: "ActiveMQ" }, { key: "connectionString", label: "Connection String", type: "text", aliases: [alias.cs], defaultValue: defaults.cs ?? "tcp://localhost:61616" }, { key: "timeout", label: "Timeout (sec)", type: "number", aliases: [alias.tc], defaultValue: defaults.tc ?? "30000" }] },
+    { title: "[02] Channel", fields: [{ key: "tuneChannelId", label: "Tune Channel", type: "text", aliases: [alias.ti], defaultValue: defaults.ti ?? "" }, { key: "castChannelId", label: "Cast Channel", type: "text", aliases: [alias.cc], defaultValue: defaults.cc ?? "" }] },
+    { title: "[03] Ftp", fields: [{ key: "ftpIp", label: "IP", type: "text", aliases: [alias.fi], defaultValue: defaults.fi ?? "localhost" }, { key: "ftpAnonymous", label: "Used Anonymous", type: "bool", options: BOOL_OPTIONS, aliases: [alias.ua], defaultValue: "True" }, { key: "ftpUserId", label: "User ID", type: "text", aliases: [alias.fu], defaultValue: defaults.fu ?? "anonymous", visibleWhen: FTP_VISIBLE }] },
   ],
 });
 
@@ -49,28 +49,28 @@ const SITE_TABS = [
     id: "BIS",
     label: "BIS",
     groups: [
-      { title: "[01] Middleware", fields: [{ key: "messageBroker", label: "Message Broker", type: "enum", options: MESSAGE_BROKER_OPTIONS, aliases: ["BSMB"], defaultValue: "ActiveMQ" }, { key: "connectionString", label: "Connection String", type: "text", aliases: ["BSCS"], defaultValue: "" }, { key: "timeout", label: "Timeout (sec)", type: "number", aliases: ["BSTO"], defaultValue: "0" }] },
-      { title: "[02] Channel", fields: [{ key: "tuneChannelId", label: "Tune Channel", type: "text", aliases: ["BSTC"], defaultValue: "" }, { key: "castChannelId", label: "Cast Channel", type: "text", aliases: ["BSCC"], defaultValue: "" }] },
+      { title: "[01] Middleware", fields: [{ key: "messageBroker", label: "Message Broker", type: "enum", options: MESSAGE_BROKER_OPTIONS, aliases: ["BSMB"], defaultValue: "ActiveMQ" }, { key: "connectionString", label: "Connection String", type: "text", aliases: ["BSCS"], defaultValue: "tcp://localhost:61616" }, { key: "timeout", label: "Timeout (sec)", type: "number", aliases: ["BSTO"], defaultValue: "30000" }] },
+      { title: "[02] Channel", fields: [{ key: "tuneChannelId", label: "Tune Channel", type: "text", aliases: ["BSTC"], defaultValue: "/LON/BISLOC" }, { key: "castChannelId", label: "Cast Channel", type: "text", aliases: ["BSCC"], defaultValue: "/LON/LOCBIS" }] },
       { title: "[03] User Validation", fields: [{ key: "externalUserValidation", label: "External User Validation", type: "bool", options: BOOL_OPTIONS, aliases: ["BSUV"], defaultValue: "False" }] },
-      { title: "[04] Ftp", fields: [{ key: "ftpIp", label: "IP", type: "text", aliases: ["BSFI"], defaultValue: "" }, { key: "ftpAnonymous", label: "Used Anonymous", type: "bool", options: BOOL_OPTIONS, aliases: ["BSUA"], defaultValue: "True" }, { key: "ftpUserId", label: "User ID", type: "text", aliases: ["BSFU"], defaultValue: "", visibleWhen: FTP_VISIBLE }] },
+      { title: "[04] Ftp", fields: [{ key: "ftpIp", label: "IP", type: "text", aliases: ["BSFI"], defaultValue: "localhost" }, { key: "ftpAnonymous", label: "Used Anonymous", type: "bool", options: BOOL_OPTIONS, aliases: ["BSUA"], defaultValue: "True" }, { key: "ftpUserId", label: "User ID", type: "text", aliases: ["BSFU"], defaultValue: "anonymous", visibleWhen: FTP_VISIBLE }] },
     ],
   },
-  makeTab("EMS", { mb: "EMB", cs: "ECS", tc: "ETO", ti: "ETC", cc: "ECC", fi: "EFI", ua: "EUA", fu: "EFU", fp: "EFP" }),
-  makeTab("RMS", { mb: "RMB", cs: "RCS", tc: "RTO", ti: "RTC", cc: "RCC", fi: "RFI", ua: "RUA", fu: "RFU", fp: "RFP" }),
-  makeTab("DTS", { mb: "DMB", cs: "DCS", tc: "DTO", ti: "DTC", cc: "DCC", fi: "DFI", ua: "DUA", fu: "DFU", fp: "DFP" }),
-  makeTab("DLS", { mb: "DLMB", cs: "DLCS", tc: "DLTO", ti: "DLTC", cc: "DLCC", fi: "DLFI", ua: "DLUA", fu: "DLFU", fp: "DLFP" }),
-  makeTab("WMS", { mb: "WMMB", cs: "WMCS", tc: "WMTO", ti: "WMTC", cc: "WMCC", fi: "WMFI", ua: "WMUA", fu: "WMFU", fp: "WMFP" }),
+  makeTab("EMS", { mb: "EMB", cs: "ECS", tc: "ETO", ti: "ETC", cc: "ECC", fi: "EFI", ua: "EUA", fu: "EFU", fp: "EFP" }, { ti: "/LON/EMSLOC", cc: "/LON/LOCEMS" }),
+  makeTab("RMS", { mb: "RMB", cs: "RCS", tc: "RTO", ti: "RTC", cc: "RCC", fi: "RFI", ua: "RUA", fu: "RFU", fp: "RFP" }, { ti: "/LON/RMSLOC", cc: "/LON/LOCRMS" }),
+  makeTab("DTS", { mb: "DMB", cs: "DCS", tc: "DTO", ti: "DTC", cc: "DCC", fi: "DFI", ua: "DUA", fu: "DFU", fp: "DFP" }, { ti: "/LON/DTSLOC", cc: "/LON/LOCDTS" }),
+  makeTab("DLS", { mb: "DLMB", cs: "DLCS", tc: "DLTO", ti: "DLTC", cc: "DLCC", fi: "DLFI", ua: "DLUA", fu: "DLFU", fp: "DLFP" }, { ti: "/LON/DLSLOC", cc: "/LON/LOCDLS" }),
+  makeTab("WMS", { mb: "WMMB", cs: "WMCS", tc: "WMTO", ti: "WMTC", cc: "WMCC", fi: "WMFI", ua: "WMUA", fu: "WMFU", fp: "WMFP" }, { ti: "/LON/WMSLOC", cc: "/LON/LOCWMS" }),
   {
     id: "EES",
     label: "EES",
     groups: [
-      { title: "[01] Middleware", fields: [{ key: "messageBroker", label: "Message Broker", type: "enum", options: MESSAGE_BROKER_OPTIONS, aliases: ["EEMB", "NMB"], defaultValue: "ActiveMQ" }, { key: "connectionString", label: "Connection String", type: "text", aliases: ["EECS", "NCS"], defaultValue: "" }, { key: "timeout", label: "Timeout (sec)", type: "number", aliases: ["EETO", "NTC"], defaultValue: "0" }] },
-      { title: "[02] Mns", fields: [{ key: "mnsTuneChannelId", label: "Mns Tune Channel", type: "text", aliases: ["EETC", "MNS1"], defaultValue: "" }, { key: "mnsCastChannelId", label: "Mns Cast Channel", type: "text", aliases: ["EECC", "MNS2"], defaultValue: "" }] },
-      { title: "[03] Nds", fields: [{ key: "ndsTuneChannelId", label: "Nds Tune Channel", type: "text", aliases: ["NDTC", "NDS1"], defaultValue: "" }, { key: "ndsCastChannelId", label: "Nds Cast Channel", type: "text", aliases: ["NDCC", "NDS2"], defaultValue: "" }] },
-      { title: "[04] Ftp", fields: [{ key: "ftpIp", label: "IP", type: "text", aliases: ["EEFI"], defaultValue: "" }, { key: "ftpAnonymous", label: "Used Anonymous", type: "bool", options: BOOL_OPTIONS, aliases: ["EEUA"], defaultValue: "True" }, { key: "ftpUserId", label: "User ID", type: "text", aliases: ["EEFU"], defaultValue: "", visibleWhen: FTP_VISIBLE }] },
+      { title: "[01] Middleware", fields: [{ key: "messageBroker", label: "Message Broker", type: "enum", options: MESSAGE_BROKER_OPTIONS, aliases: ["EEMB", "NMB"], defaultValue: "ActiveMQ" }, { key: "connectionString", label: "Connection String", type: "text", aliases: ["EECS", "NCS"], defaultValue: "tcp://localhost:61616" }, { key: "timeout", label: "Timeout (sec)", type: "number", aliases: ["EETO", "NTC"], defaultValue: "30000" }] },
+      { title: "[02] Mns", fields: [{ key: "mnsTuneChannelId", label: "Mns Tune Channel", type: "text", aliases: ["EETC", "MNS1"], defaultValue: "/NON/MNSNOC" }, { key: "mnsCastChannelId", label: "Mns Cast Channel", type: "text", aliases: ["EECC", "MNS2"], defaultValue: "/NON/NOCMNS" }] },
+      { title: "[03] Nds", fields: [{ key: "ndsTuneChannelId", label: "Nds Tune Channel", type: "text", aliases: ["NDTC", "NDS1"], defaultValue: "/NON/NDSNOC" }, { key: "ndsCastChannelId", label: "Nds Cast Channel", type: "text", aliases: ["NDCC", "NDS2"], defaultValue: "/NON/NOCNDS" }] },
+      { title: "[04] Ftp", fields: [{ key: "ftpIp", label: "IP", type: "text", aliases: ["EEFI"], defaultValue: "localhost" }, { key: "ftpAnonymous", label: "Used Anonymous", type: "bool", options: BOOL_OPTIONS, aliases: ["EEUA"], defaultValue: "True" }, { key: "ftpUserId", label: "User ID", type: "text", aliases: ["EEFU"], defaultValue: "anonymous", visibleWhen: FTP_VISIBLE }] },
     ],
   },
-  makeTab("RPS", { mb: "RP0", cs: "RP1", tc: "RP2", ti: "RP3", cc: "RP4", fi: "RP5", ua: "RP6", fu: "RP7", fp: "RP8" }),
+  makeTab("RPS", { mb: "RP0", cs: "RP1", tc: "RP2", ti: "RP3", cc: "RP4", fi: "RP5", ua: "RP6", fu: "RP7", fp: "RP8" }, { ti: "/LON/RPSLOC", cc: "/LON/LOCRPS" }),
 ];
 
 const CLIENT_ATTR_ORDER = buildClientAttrOrder();
@@ -96,7 +96,7 @@ export function ClientConfigEditor() {
   const selectedSiteRow = useMemo(() => (cfgDoc?.siteRows || []).find((row) => row.id === cfgDoc?.selectedSiteId) || null, [cfgDoc?.selectedSiteId, cfgDoc?.siteRows]);
   const activeClientGroups = useMemo(() => (hasDocument ? (CLIENT_GROUPS[activeClientCategory] || []) : []), [activeClientCategory, hasDocument]);
   const activeSiteDef = useMemo(() => SITE_TABS.find((tab) => tab.id === activeSiteTab) || SITE_TABS[0], [activeSiteTab]);
-  const clientCtx = useMemo(() => ({ usedScreenLock: normalizeYesNoValue(getValueByAliases(cfgDoc?.optAttrs, ["SCL", "USL"], "No"), "No"), isNetworkDeployed: normalizeYesNoValue(getValueByAliases(cfgDoc?.optAttrs, ["NDPLY", "AUD"], "No"), "No") }), [cfgDoc?.optAttrs]);
+  const clientCtx = useMemo(() => ({ usedScreenLock: normalizeYesNoValue(getValueByAliases(cfgDoc?.optAttrs, ["SCL", "USL"], "No"), "No"), isNetworkDeployed: normalizeYesNoValue(getValueByAliases(cfgDoc?.optAttrs, ["NDPLY"], "No"), "No") }), [cfgDoc?.optAttrs]);
   useEffect(() => {
     if (!cfgDoc) {
       setSiteDraft(createEmptySiteDraft());
@@ -198,7 +198,11 @@ export function ClientConfigEditor() {
     setCfgDoc((prev) => {
       if (!prev) return prev;
       const optAttrs = { ...(prev.optAttrs || {}) };
-      setValueByAliases(optAttrs, field.aliases || [], normalizeFieldValue(field, value));
+      const normalizedValue = normalizeFieldValue(field, value);
+      setValueByAliases(optAttrs, field.aliases || [], normalizedValue);
+      if (String(field?.key || "") === "isNetworkDeployed") {
+        syncNetworkDeployAliases(optAttrs);
+      }
       return { ...prev, optAttrs };
     });
     setIsDirty(true);
@@ -306,7 +310,9 @@ function PropertyRow({ field, value, onChange }) {
 }
 function createDefaultDoc(dateLike) {
   const stamp = formatStamp(dateLike);
-  return { metaAttrs: { QF: "CFG", QV: "1.0.0.1", QC: stamp, QU: stamp, QD: "LinkOn Client File" }, optAttrs: buildDefaultOptAttrs(), referenceSiteAttrs: {}, siteRows: [], selectedSiteId: "" };
+  const optAttrs = buildDefaultOptAttrs();
+  syncNetworkDeployAliases(optAttrs);
+  return { metaAttrs: { QF: "CFG", QV: "1.0.0.1", QC: stamp, QU: stamp, QD: "LinkOn Client File" }, optAttrs, referenceSiteAttrs: {}, siteRows: [], selectedSiteId: "" };
 }
 
 function buildDefaultOptAttrs() {
@@ -350,6 +356,7 @@ function parseClientConfigXml(xmlText) {
 
   const metaAttrs = readAttrs(root);
   const optAttrs = readAttrs(opt);
+  syncNetworkDeployAliases(optAttrs);
   const rsoAttrs = readAttrs(findChild(opt, "RSO"));
   normalizeLegacySiteAttrs(rsoAttrs);
   const siteRows = findChildren(findChild(opt, "SOL"), "SOP").map((sop) => {
@@ -375,6 +382,7 @@ function buildClientConfigXml(cfgDoc) {
   if (!String(metaAttrs.QC || "").trim()) metaAttrs.QC = formatStamp(now);
   metaAttrs.QU = formatStamp(now);
   const optAttrs = { ...(cfgDoc?.optAttrs || {}) };
+  syncNetworkDeployAliases(optAttrs);
   const siteRows = (cfgDoc?.siteRows || []).map((row) => ({ id: row.id, attrs: { ...(row.attrs || {}) } }));
   const selected = siteRows.find((row) => row.id === cfgDoc?.selectedSiteId) || siteRows[0] || null;
   const rsoAttrs = Object.keys(cfgDoc?.referenceSiteAttrs || {}).length ? { ...(cfgDoc.referenceSiteAttrs || {}) } : (selected ? { ...(selected.attrs || {}) } : {});
@@ -408,7 +416,18 @@ function writeAttrs(attrs, order = []) { const src = attrs || {}; const keys = O
 function sp(text) { return text ? ` ${text}` : ""; }
 function escapeXml(value) { return String(value ?? "").replace(/&/g, "&amp;").replace(/\"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 function createSiteRowId() { const id = `site-${SITE_ROW_COUNTER}`; SITE_ROW_COUNTER += 1; return id; }
-function getValueByAliases(attrs, aliases, fallback = "") { const src = attrs || {}; for (const alias of aliases || []) if (Object.prototype.hasOwnProperty.call(src, alias)) return String(src[alias] ?? ""); return String(fallback ?? ""); }
+function getValueByAliases(attrs, aliases, fallback = "") {
+  const src = attrs || {};
+  let firstExistingAlias = "";
+  for (const alias of aliases || []) {
+    if (!Object.prototype.hasOwnProperty.call(src, alias)) continue;
+    if (!firstExistingAlias) firstExistingAlias = alias;
+    const text = String(src[alias] ?? "");
+    if (text.trim()) return text;
+  }
+  if (firstExistingAlias) return String(src[firstExistingAlias] ?? "");
+  return String(fallback ?? "");
+}
 function setValueByAliases(attrs, aliases, value) { if (!attrs || !aliases?.length) return; const existing = aliases.find((alias) => Object.prototype.hasOwnProperty.call(attrs, alias)); attrs[existing || aliases[0]] = String(value ?? ""); }
 function getSiteValue(attrs, fieldName) { const key = String(fieldName || "").toLowerCase(); return getValueByAliases(attrs, SITE_FIELD_ALIASES[key] || [], ""); }
 function normalizeSiteKey(value) { return String(value ?? "").trim().toUpperCase(); }
@@ -485,6 +504,12 @@ function normalizeExtraBoolAliases(attrs, aliases) {
     if (!Object.prototype.hasOwnProperty.call(attrs, alias)) continue;
     attrs[alias] = normalizeBoolValue(attrs[alias], "False");
   }
+}
+function syncNetworkDeployAliases(attrs) {
+  if (!attrs) return;
+  const normalized = normalizeYesNoValue(getValueByAliases(attrs, ["NDPLY"], "No"), "No");
+  attrs.NDPLY = normalized;
+  attrs.AUD = normalized;
 }
 function normalizeFieldValue(field, value) { const type = String(field?.type || "text").toLowerCase(); const fallback = field?.defaultValue ?? ""; if (type === "yesno") return normalizeYesNoValue(value, normalizeYesNoValue(fallback, "No")); if (type === "bool") return normalizeBoolValue(value, normalizeBoolValue(fallback, "False")); const text = String(value ?? "").trim(); return text || String(fallback ?? ""); }
 function normalizeYesNoValue(value, fallback = "No") { const text = String(value ?? "").trim().toLowerCase(); if (!text) return fallback; if (["yes", "y", "true", "t", "1"].includes(text)) return "Yes"; if (["no", "n", "false", "f", "0"].includes(text)) return "No"; return fallback; }

@@ -173,11 +173,43 @@ const MANUAL_SECTIONS = [
     id: "clientConfigEditor",
     title: "Client Config Editor",
     image: "manual/screenshots/client-config-editor-overview.png",
-    description: "Client Config module entry point from Declaration menu path.",
+    description: "Use this screen to create/open/save .cfg files and manage Client/Site configuration values.",
     points: [
-      "Open from Home > Declaration > Client Config or Ribbon Declaration group.",
-      "Current build shows placeholder page for Client Config module integration.",
-      "Use this location for future client option/configuration management.",
+      "Menu path: Home > Declaration > Client Config or Ribbon Declaration > Client Config.",
+      "Toolbar: create new .cfg file, open existing file, and save/save-as current data.",
+      "Main tabs: switch between Client Configuration and Site Configuration.",
+      "Client Configuration: choose category and edit grouped properties.",
+      "Site Configuration: select site row, edit values by service tab, then apply with Update/Delete.",
+    ],
+    buttonGroups: [
+      {
+        title: "Main Buttons",
+        items: [
+          { name: "New (.cfg)", iconImage: "icons/menuEditor/new_16x16.png", description: "Create default LinkOnClient.cfg document data." },
+          { name: "Open (.cfg)", iconImage: "icons/menuEditor/open_16x16.png", description: "Open and load local .cfg file." },
+          { name: "Save (.cfg)", iconImage: "icons/menuEditor/save_16x16.png", description: "Save current configuration to current file." },
+          { name: "Save As (.cfg)", iconImage: "icons/clientConfig/saveall_16x16.png", description: "Save current configuration to new file name." },
+        ],
+      },
+      {
+        title: "Main Tab Buttons",
+        items: [
+          { name: "Client Configuration", iconText: "C", description: "Edit default client options such as language, font, log, and update settings." },
+          { name: "Site Configuration", iconText: "S", description: "Edit site rows and service configuration by BIS/EMS/RMS/DTS/DLS/WMS/EES/RPS tabs." },
+        ],
+      },
+      {
+        title: "Site Action Buttons",
+        items: [
+          { name: "Update", iconImage: "icons/languageEditor/ToolCheck.png", description: "Create or update selected site row with current form values." },
+          { name: "Delete", iconImage: "icons/languageEditor/ToolRemove.png", description: "Delete currently selected site row." },
+        ],
+      },
+    ],
+    menuTitle: "Menu",
+    menuItems: [
+      { name: "Home > Declaration > Client Config", description: "Open Client Config Editor from Home shortcut card." },
+      { name: "Ribbon > Declaration > Client Config", description: "Switch to Client Config Editor from ribbon declaration group." },
     ],
   },
   {
