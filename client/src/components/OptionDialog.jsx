@@ -143,7 +143,7 @@ export function OptionDialog({
           <p className="option-field-help">
           </p>
 
-          <label>Data Grid Guide Line</label>
+          <label>Tree Guide Lines</label>
           <label className="option-checkbox-field">
             <input
               type="checkbox"

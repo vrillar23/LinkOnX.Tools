@@ -163,7 +163,7 @@ const MANUAL_SECTIONS = [
       {
         title: "Properties Header Buttons",
         items: [
-          { name: "Update", iconImage: "icons/languageEditor/ToolCheck.png", description: "Apply current property edits to selected Caption/Message row." },
+          { name: "Update", iconImage: "icons/languageEditor/ToolCheck.png", description: "Apply current property edits to selected Caption/Message row. Create a new value when the same value already exists." },
           { name: "Delete", iconImage: "icons/languageEditor/ToolRemove.png", description: "Delete selected Caption/Message row." },
         ],
       },
@@ -211,7 +211,7 @@ const MANUAL_SECTIONS = [
       {
         title: "Site Action Buttons",
         items: [
-          { name: "Update", iconImage: "icons/languageEditor/ToolCheck.png", description: "Create or update selected site row with current form values." },
+          { name: "Update", iconImage: "icons/languageEditor/ToolCheck.png", description: "Create or update selected site row with current form values. Create a new value when the same value already exists." },
           { name: "Delete", iconImage: "icons/languageEditor/ToolRemove.png", description: "Delete currently selected site row." },
         ],
       },
