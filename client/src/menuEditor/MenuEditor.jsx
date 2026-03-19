@@ -1163,53 +1163,62 @@ export function MenuEditor() {
               {selectedNode ? propertyGroups.map((group, groupIndex) => (
                 <div key={group.category} className="MenuEditor-prop-group">
                     <div className="MenuEditor-prop-category">{formatCategoryDisplay(group.category, groupIndex + 1)}</div>
-                  {group.rows.map((row) => (
-                    <div key={row.key} className="MenuEditor-prop-row">
-                      <label title={row.displayKey}>{row.label}</label>
-                      {row.imagePreviewOnly ? (
-                        <div className="MenuEditor-image-preview-wrap">
-                          {(() => {
-                            const previewSrc = resolveMenuImagePreviewSrc(treeRoot, selectedNode, row.previewKey, row.value);
-                            return previewSrc ? (
-                              <img src={previewSrc} alt={row.label} className="MenuEditor-image-preview" />
-                            ) : (
-                              <span className="MenuEditor-image-preview-empty">No image</span>
-                            );
-                          })()}
-                        </div>
-                      ) : row.readOnly ? (
-                        <input value={row.value} readOnly />
-                      ) : row.options ? (
-                        <select value={row.value} onChange={(event) => onChangeProperty(row, event.target.value)}>
-                          {row.options.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      ) : row.isImage ? (
-                        <div className="MenuEditor-image-picker-field">
+                  {group.rows.map((row) => {
+                    const isFixedGeneralReadonly = row.category === "General" && (row.key === "__type" || row.key === "_S");
+                    return (
+                      <div key={row.key} className="MenuEditor-prop-row">
+                        <label title={row.displayKey}>{row.label}</label>
+                        {row.imagePreviewOnly ? (
+                          <div className="MenuEditor-image-preview-wrap">
+                            {(() => {
+                              const previewSrc = resolveMenuImagePreviewSrc(treeRoot, selectedNode, row.previewKey, row.value);
+                              return previewSrc ? (
+                                <img src={previewSrc} alt={row.label} className="MenuEditor-image-preview" />
+                              ) : (
+                                <span className="MenuEditor-image-preview-empty">No image</span>
+                              );
+                            })()}
+                          </div>
+                        ) : row.readOnly ? (
                           <input
-                            value={resolveMenuImagePreviewSrc(treeRoot, selectedNode, row.key, row.value) ? "System.Drawing.Bitmap" : ""}
+                            value={row.value}
                             readOnly
+                            disabled={isFixedGeneralReadonly}
+                            tabIndex={isFixedGeneralReadonly ? -1 : undefined}
+                            className={isFixedGeneralReadonly ? "MenuEditor-prop-input-locked" : undefined}
                           />
-                          <button
-                            type="button"
-                            className="MenuEditor-image-select-btn"
-                            onClick={() => onOpenImagePicker(row.key)}
-                            title="Select image"
-                            aria-label="Select image"
-                          >
-                            ...
-                          </button>
-                        </div>
-                      ) : row.multiline ? (
-                        <textarea value={row.value} rows={3} onChange={(event) => onChangeProperty(row, event.target.value)} />
-                      ) : (
-                        <input value={row.value} onChange={(event) => onChangeProperty(row, event.target.value)} />
-                      )}
-                    </div>
-                  ))}
+                        ) : row.options ? (
+                          <select value={row.value} onChange={(event) => onChangeProperty(row, event.target.value)}>
+                            {row.options.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        ) : row.isImage ? (
+                          <div className="MenuEditor-image-picker-field">
+                            <input
+                              value={resolveMenuImagePreviewSrc(treeRoot, selectedNode, row.key, row.value) ? "System.Drawing.Bitmap" : ""}
+                              readOnly
+                            />
+                            <button
+                              type="button"
+                              className="MenuEditor-image-select-btn"
+                              onClick={() => onOpenImagePicker(row.key)}
+                              title="Select image"
+                              aria-label="Select image"
+                            >
+                              ...
+                            </button>
+                          </div>
+                        ) : row.multiline ? (
+                          <textarea value={row.value} rows={3} onChange={(event) => onChangeProperty(row, event.target.value)} />
+                        ) : (
+                          <input value={row.value} onChange={(event) => onChangeProperty(row, event.target.value)} />
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )) : null}
             </div>

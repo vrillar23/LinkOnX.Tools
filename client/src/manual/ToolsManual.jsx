@@ -74,7 +74,7 @@ const MANUAL_SECTIONS = [
       "Tree panel: search by Name / Caption and move between matched nodes.",
       "Tree interaction: use Arrow Up/Down to move rows and Arrow Left/Right to collapse or expand selected node.",
       "Tree interaction: double-click node to expand/collapse and use Delete key to run Remove on selected node.",
-      "Properties panel: edit selected node attributes for MNU, MSY, MIT, and PIT.",
+      "Properties panel: edit selected node attributes",
     ],
     buttonGroups: [
       {

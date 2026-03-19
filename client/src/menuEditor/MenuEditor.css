@@ -467,6 +467,17 @@
   font-size: 13px;
 }
 
+.MenuEditor-prop-row input.MenuEditor-prop-input-locked {
+  background: #eef2f6;
+  border-color: #d4dde8;
+  color: #6b7280;
+  cursor: default;
+  user-select: none;
+  pointer-events: none;
+  opacity: 1;
+  -webkit-text-fill-color: #6b7280;
+}
+
 .MenuEditor-prop-row textarea {
   resize: vertical;
   min-height: 72px;
@@ -588,6 +599,13 @@ body.app-theme-dark .MenuEditor-image-preview-wrap {
   background: #0c172b;
   border-color: #31445f;
   color: #dbe7ff;
+}
+
+body.app-theme-dark .MenuEditor-prop-row input.MenuEditor-prop-input-locked {
+  background: #19273e;
+  border-color: #31445f;
+  color: #a9b8cf;
+  -webkit-text-fill-color: #a9b8cf;
 }
 
 body.app-theme-dark .MenuEditor-tree-row:hover {
