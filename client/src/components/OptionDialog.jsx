@@ -61,14 +61,16 @@ export function OptionDialog({
   );
 
   const [treeFont, setTreeFont] = useState(initialTreeFont);
-  const [treeSize, setTreeSize] = useState(initialTreeSize);
+  const [treeSizeInput, setTreeSizeInput] = useState(String(initialTreeSize ?? ""));
   const [propFont, setPropFont] = useState(initialPropFont);
-  const [propSize, setPropSize] = useState(initialPropSize);
+  const [propSizeInput, setPropSizeInput] = useState(String(initialPropSize ?? ""));
   const [themePreset, setThemePreset] = useState(() => normalizeThemePreset(initialThemePreset));
   const [showTreeDepthGuide, setShowTreeDepthGuide] = useState(Boolean(initialShowTreeDepthGuide));
 
-  const normalizeSize = (raw, fallback) => {
-    const parsed = Number(raw);
+  const normalizeSizeForApply = (raw, fallback) => {
+    const text = String(raw ?? "").trim();
+    if (!text) return fallback;
+    const parsed = Number(text);
     if (!Number.isFinite(parsed)) return fallback;
     return Math.max(8, Math.min(32, parsed));
   };
@@ -76,9 +78,17 @@ export function OptionDialog({
   return (
     <div className="option-backdrop">
       <div className="option-dialog">
-        <h3>Options</h3>
+        <div className="option-header">
+          <h3>Options</h3>
+          <button
+            type="button"
+            className="option-close-btn"
+            onClick={onCancel}
+            aria-label="Close options dialog"
+          />
+        </div>
         <div className="option-grid">
-          <label>Theme Preset</label>
+          <label>Theme Setting</label>
           <select value={themePreset} onChange={(event) => setThemePreset(event.target.value)}>
             {availableThemePresets.map((preset) => (
               <option key={preset} value={preset}>
@@ -86,8 +96,10 @@ export function OptionDialog({
               </option>
             ))}
           </select>
+          <p className="option-field-help">
+          </p>
 
-          <label>Tree Font</label>
+          <label>DataGrid Font</label>
           <select value={treeFont} onChange={(event) => setTreeFont(event.target.value)}>
             {fontOptions.map((fontName) => (
               <option key={fontName} value={fontName}>
@@ -95,17 +107,21 @@ export function OptionDialog({
               </option>
             ))}
           </select>
+          <p className="option-field-help">
+          </p>
 
-          <label>Tree Size</label>
+          <label>DataGrid Font Size</label>
           <input
             type="number"
-            value={treeSize}
+            value={treeSizeInput}
             min={8}
             max={32}
-            onChange={(event) => setTreeSize(normalizeSize(event.target.value, initialTreeSize))}
+            onChange={(event) => setTreeSizeInput(event.target.value)}
           />
+          <p className="option-field-help">
+          </p>
 
-          <label>Property Label Font</label>
+          <label>Property Font</label>
           <select value={propFont} onChange={(event) => setPropFont(event.target.value)}>
             {fontOptions.map((fontName) => (
               <option key={fontName} value={fontName}>
@@ -113,25 +129,31 @@ export function OptionDialog({
               </option>
             ))}
           </select>
+          <p className="option-field-help">
+          </p>
 
-          <label>Property Label Size</label>
+          <label>Property Font Size</label>
           <input
             type="number"
-            value={propSize}
+            value={propSizeInput}
             min={8}
             max={32}
-            onChange={(event) => setPropSize(normalizeSize(event.target.value, initialPropSize))}
+            onChange={(event) => setPropSizeInput(event.target.value)}
           />
+          <p className="option-field-help">
+          </p>
 
-          <label>Tree Guide Line</label>
+          <label>Data Grid Guide Line</label>
           <label className="option-checkbox-field">
             <input
               type="checkbox"
               checked={showTreeDepthGuide}
               onChange={(event) => setShowTreeDepthGuide(event.target.checked)}
             />
-            Show pseudo-element guide
+            
           </label>
+          <p className="option-field-help">
+          </p>
         </div>
 
         <div className="option-actions">
@@ -142,9 +164,9 @@ export function OptionDialog({
             onClick={() =>
               onApply({
                 treeFont,
-                treeSize: normalizeSize(treeSize, initialTreeSize),
+                treeSize: normalizeSizeForApply(treeSizeInput, initialTreeSize),
                 propFont,
-                propSize: normalizeSize(propSize, initialPropSize),
+                propSize: normalizeSizeForApply(propSizeInput, initialPropSize),
                 themePreset: normalizeThemePreset(themePreset),
                 showTreeDepthGuide,
               })

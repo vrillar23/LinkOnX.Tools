@@ -134,7 +134,7 @@
   appearance: none;
   -webkit-appearance: none;
   border: 1px solid #cbd5e1;
-  border-bottom: 0;
+  border-bottom: 1px solid #cbd5e1;
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
   background: #f8fafc;
@@ -148,14 +148,15 @@
   font-family: inherit;
   vertical-align: middle;
   padding: 0 0.65rem 1px;
-  box-shadow: inset 0 -1px 0 #b3c1d3;
+  box-shadow: none;
   transform: translateY(-4px);
 }
 
 .LanguageEditor-tab-btn.active {
   background: #ffffff;
   color: #0f172a;
-  box-shadow: inset 0 -1px 0 #8ea7c7;
+  border-color: #cbd5e1;
+  box-shadow: none;
 }
 
 .LanguageEditor-tree-search {
@@ -292,7 +293,7 @@
 
 .LanguageEditor-caption-head span {
   min-width: 0;
-  padding: 4px 10px;
+  padding: 1px 10px 5px;
   font-size: 0.86rem;
   font-weight: 700;
   color: #1f2937;
@@ -316,7 +317,7 @@
 
 .LanguageEditor-message-head span {
   min-width: 0;
-  padding: 4px 10px;
+  padding: 3px 10px 5px;
   font-size: 0.86rem;
   font-weight: 700;
   color: #1f2937;
@@ -335,6 +336,8 @@
   cursor: pointer;
   user-select: none;
   padding-right: 0.42rem;
+  font-family: var(--tree-font-family, "Noto Sans KR", "Noto Sans", "Segoe UI", system-ui, sans-serif);
+  font-size: var(--tree-font-size, 14px);
 }
 
 .LanguageEditor-tree-row-caption {
@@ -367,7 +370,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   padding: 2px 10px;
-  font-size: 0.95rem;
+  font-size: inherit;
   line-height: 1.2;
 }
 
@@ -383,7 +386,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   padding: 2px 10px;
-  font-size: 0.95rem;
+  font-size: inherit;
   line-height: 1.2;
 }
 
@@ -507,7 +510,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.95rem;
+  font-size: inherit;
 }
 
 .LanguageEditor-prop-head {

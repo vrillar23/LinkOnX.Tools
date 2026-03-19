@@ -261,6 +261,7 @@ export function ClientConfigEditor() {
         <p className="ClientConfigEditor-inline-file-name">{selectedFile?.name ? `${selectedFile.name}${isDirty ? " *" : ""}` : ""}</p>
       </div>
       {errorText ? <p className="error-text ClientConfigEditor-inline-error">{errorText}</p> : null}
+      <div className="ClientConfigEditor-toolbar-splitter" aria-hidden="true" />
 
       <div className="ClientConfigEditor-main-tabs" role="tablist" aria-label="Client Config Main Tabs">
         <button type="button" className={`ClientConfigEditor-main-tab-btn${activeMainTab === "client" ? " active" : ""}`} onClick={() => setActiveMainTab("client")}>Client Configuration</button>
@@ -270,12 +271,12 @@ export function ClientConfigEditor() {
         {activeMainTab === "client" ? (
           <div className="ClientConfigEditor-client-layout">
             <section className="ClientConfigEditor-left-panel"><div className="ClientConfigEditor-list-head">Category</div><div className="ClientConfigEditor-list-scroll">{(hasDocument ? CLIENT_CATEGORIES : []).map((row) => <button key={row.id} type="button" className={`ClientConfigEditor-list-row${activeClientCategory === row.id ? " active" : ""}`} onClick={() => setActiveClientCategory(row.id)}>{row.label}</button>)}</div></section>
-            <section className="ClientConfigEditor-prop-panel">{hasDocument ? <><div className="ClientConfigEditor-prop-head"><h3>Properties</h3></div><div className="ClientConfigEditor-prop-scroll">{activeClientGroups.map((group) => <section key={group.title} className="ClientConfigEditor-prop-group"><h4 className="ClientConfigEditor-prop-category">{group.title}</h4>{group.fields.filter((field) => (typeof field.visibleWhen === "function" ? field.visibleWhen(clientCtx) : true)).map((field) => <PropertyRow key={field.key} field={field} value={normalizeFieldValue(field, getValueByAliases(cfgDoc?.optAttrs, field.aliases, field.defaultValue ?? ""))} onChange={(value) => onClientValue(field, value)} />)}</section>)}</div></> : <div className="ClientConfigEditor-empty-panel" />}</section>
+            <section className="ClientConfigEditor-prop-panel ClientConfigEditor-client-prop-panel">{hasDocument ? <><div className="ClientConfigEditor-prop-head"><h3>Properties</h3></div><div className="ClientConfigEditor-prop-scroll">{activeClientGroups.map((group) => <section key={group.title} className="ClientConfigEditor-prop-group"><h4 className="ClientConfigEditor-prop-category">{group.title}</h4>{group.fields.filter((field) => (typeof field.visibleWhen === "function" ? field.visibleWhen(clientCtx) : true)).map((field) => <PropertyRow key={field.key} field={field} value={normalizeFieldValue(field, getValueByAliases(cfgDoc?.optAttrs, field.aliases, field.defaultValue ?? ""))} onChange={(value) => onClientValue(field, value)} />)}</section>)}</div></> : <div className="ClientConfigEditor-empty-panel" />}</section>
           </div>
         ) : (
           <div className="ClientConfigEditor-site-layout">
             <section className="ClientConfigEditor-left-panel"><div className="ClientConfigEditor-list-head ClientConfigEditor-site-grid-head"><span>Site</span><span>Factory</span><span>Description</span></div><div className="ClientConfigEditor-site-grid-scroll">{hasDocument && (cfgDoc?.siteRows || []).length ? (cfgDoc?.siteRows || []).map((row) => <button key={row.id} type="button" className={`ClientConfigEditor-site-grid-row${cfgDoc?.selectedSiteId === row.id ? " active" : ""}`} onClick={() => setCfgDoc((prev) => (prev ? { ...prev, selectedSiteId: row.id } : prev))}><span>{getSiteValue(row.attrs, "site") || "-"}</span><span>{getSiteValue(row.attrs, "factory") || "-"}</span><span>{getSiteValue(row.attrs, "description") || "-"}</span></button>) : <div className="ClientConfigEditor-site-grid-empty" />}</div></section>
-            <section className="ClientConfigEditor-prop-panel">
+            <section className="ClientConfigEditor-prop-panel ClientConfigEditor-site-prop-panel">
               {hasDocument ? (
                 <>
                   <div className="ClientConfigEditor-site-actions"><button type="button" className="ClientConfigEditor-icon-btn" onClick={onUpdateSite} title="Update"><img src={UPDATE_ICON_SRC} alt="Update" /></button><button type="button" className="ClientConfigEditor-icon-btn" onClick={onDeleteSite} title="Delete" disabled={!selectedSiteRow}><img src={DELETE_ICON_SRC} alt="Delete" /></button></div>

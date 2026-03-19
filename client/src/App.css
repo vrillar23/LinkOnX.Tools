@@ -418,6 +418,98 @@ body.app-theme-dark .session-dialog .session-dialog-comment {
   color: #e2e8f0;
 }
 
+body.app-theme-dark .ClientConfigEditor-left-panel,
+body.app-theme-dark .ClientConfigEditor-prop-panel,
+body.app-theme-dark .ClientConfigEditor-list-head,
+body.app-theme-dark .ClientConfigEditor-main-tabs,
+body.app-theme-dark .ClientConfigEditor-site-tabs,
+body.app-theme-dark .ClientConfigEditor-prop-scroll,
+body.app-theme-dark .ClientConfigEditor-empty-panel {
+  background: #0f1a2d;
+  border-color: #31445f;
+  color: #dbe7ff;
+}
+
+body.app-theme-dark .ClientConfigEditor-main-tab-btn,
+body.app-theme-dark .ClientConfigEditor-site-tab-btn,
+body.app-theme-dark .ClientConfigEditor-file-action-btn,
+body.app-theme-dark .ClientConfigEditor-icon-btn {
+  background: #15253f;
+  border-color: #4b5f80;
+  color: #dbe7ff;
+}
+
+body.app-theme-dark .ClientConfigEditor-main-tab-btn.active,
+body.app-theme-dark .ClientConfigEditor-site-tab-btn.active,
+body.app-theme-dark .ClientConfigEditor-list-row.active,
+body.app-theme-dark .ClientConfigEditor-site-grid-row.active {
+  background: #243a60;
+  border-color: #60a5fa;
+  color: #dbe7ff;
+}
+
+body.app-theme-dark .ClientConfigEditor-main-tabs {
+  border-bottom-color: #4b5f80;
+}
+
+body.app-theme-dark .ClientConfigEditor-main-tab-btn.active,
+body.app-theme-dark .ClientConfigEditor-site-tab-btn.active {
+  border-color: #4b5f80;
+}
+
+body.app-theme-dark .ClientConfigEditor-list-row,
+body.app-theme-dark .ClientConfigEditor-site-grid-row {
+  background: #0f1a2d;
+  color: #dbe7ff;
+}
+
+body.app-theme-dark .ClientConfigEditor-list-row:hover,
+body.app-theme-dark .ClientConfigEditor-site-grid-row:hover {
+  background: #172741;
+  border-color: #3b4f70;
+}
+
+body.app-theme-dark .ClientConfigEditor-site-grid-head span + span,
+body.app-theme-dark .ClientConfigEditor-site-grid-row span + span {
+  border-color: #27384f;
+}
+
+body.app-theme-dark .ClientConfigEditor-separator {
+  background: #31445f;
+}
+
+body.app-theme-dark .ClientConfigEditor-toolbar-splitter {
+  background: #31445f;
+}
+
+body.app-theme-dark .ClientConfigEditor-prop-category {
+  background: #1a2a46;
+  color: #dbe7ff;
+}
+
+body.app-theme-dark .ClientConfigEditor-site-grid-empty {
+  color: #9fb1cf;
+}
+
+body.app-theme-dark .ClientConfigEditor-prop-label,
+body.app-theme-dark .ClientConfigEditor-site-field-row span,
+body.app-theme-dark .ClientConfigEditor-prop-head h3,
+body.app-theme-dark .MenuEditor-prop-head h3,
+body.app-theme-dark .LanguageEditor-prop-head h3 {
+  color: #dbe7ff;
+}
+
+body.app-theme-dark .ClientConfigEditor-prop-input,
+body.app-theme-dark .ClientConfigEditor-site-field-row input {
+  background: #0c172b;
+  border-color: #31445f;
+  color: #dbe7ff;
+}
+
+body.app-theme-dark .ClientConfigEditor-client-prop-panel .ClientConfigEditor-prop-head {
+  border-bottom-color: #31445f;
+}
+
 body.app-theme-vs2010 {
   --classic-surface: rgba(217, 223, 232, 0.94);
   --classic-panel: #d5dce8;
@@ -563,6 +655,8 @@ body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .LanguageEditor-inline-action-btn,
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .MenuEditor-file-action-btn,
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .MenuEditor-image-select-btn,
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-file-action-btn,
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-icon-btn,
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .sql-tab-btn,
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .sql-tab-icon-btn {
   background: var(--classic-ctrl-bg);
@@ -587,6 +681,8 @@ body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .LanguageEditor-inline-action-btn:hover:not(:disabled),
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .MenuEditor-file-action-btn:hover:not(:disabled),
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .MenuEditor-image-select-btn:hover:not(:disabled),
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-file-action-btn:hover:not(:disabled),
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-icon-btn:hover:not(:disabled),
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .sql-tab-btn:hover:not(:disabled),
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .sql-tab-icon-btn:hover:not(:disabled) {
   background: var(--classic-ctrl-bg-hover);
@@ -647,10 +743,71 @@ body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .LanguageEditor-prop-scroll,
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .LanguageEditor-caption-head,
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .LanguageEditor-message-head,
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-left-panel,
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-prop-panel,
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-list-head,
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-main-tabs,
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-site-tabs,
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-prop-scroll,
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-empty-panel,
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .tree-context-menu {
   background: var(--classic-panel);
   border-color: var(--classic-border);
   color: var(--classic-ink);
+}
+
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-list-row,
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-site-grid-row {
+  background: var(--classic-panel);
+  color: var(--classic-ink);
+}
+
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-main-tabs {
+  border-bottom-color: var(--classic-ctrl-border);
+}
+
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-main-tab-btn.active,
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-site-tab-btn.active {
+  background: var(--classic-accent-soft);
+  border-color: var(--classic-ctrl-border);
+  color: var(--classic-strong);
+}
+
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-main-tab-btn,
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-site-tab-btn,
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .LanguageEditor-tab-btn {
+  border-color: var(--classic-ctrl-border);
+  box-shadow: none;
+}
+
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .LanguageEditor-tab-btn.active {
+  border-color: var(--classic-ctrl-border);
+  box-shadow: none;
+}
+
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .LanguageEditor-tab-strip {
+  border-bottom-color: var(--classic-border);
+}
+
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-site-grid-head span + span,
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-site-grid-row span + span {
+  border-color: var(--classic-border);
+}
+
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-separator {
+  background: var(--classic-border);
+}
+
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-client-prop-panel .ClientConfigEditor-prop-head {
+  border-bottom-color: var(--classic-border);
+}
+
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-toolbar-splitter {
+  background: var(--classic-border);
+}
+
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-site-grid-empty {
+  color: var(--classic-ink-soft);
 }
 
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .tree-context-menu button:hover:not(:disabled) {
@@ -660,18 +817,23 @@ body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .
 
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .prop-category,
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .MenuEditor-prop-category,
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-prop-category,
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .LanguageEditor-prop-category {
   background: var(--classic-accent-soft);
   color: var(--classic-strong);
 }
 
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .tree-label.active,
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-list-row.active,
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-site-grid-row.active,
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .MenuEditor-tree-row.selected,
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .LanguageEditor-tree-row.selected {
   background: var(--classic-row-selected);
 }
 
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .MenuEditor-tree-row:hover,
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-list-row:hover,
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-site-grid-row:hover,
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .LanguageEditor-tree-row:hover {
   background: var(--classic-row-hover);
 }
@@ -686,6 +848,8 @@ body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .LanguageEditor-tree-search-count,
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .LanguageEditor-prop-row input,
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .LanguageEditor-prop-row textarea,
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-prop-input,
+body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .ClientConfigEditor-site-field-row input,
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .prop-row input,
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .prop-row select,
 body:is(.app-theme-vs2010, .app-theme-sevenclassic, .app-theme-office2013gray, .app-theme-office2019darkgray) .sql-textarea,
@@ -734,8 +898,158 @@ body.app-theme-office2019darkgray .home-shortcut-desc {
   color: #dfdfdf;
 }
 
+body.app-theme-office2019darkgray .home-group h3 {
+  color: var(--classic-ink);
+}
+
+body.app-theme-vs2010 .ClientConfigEditor-left-panel,
+body.app-theme-vs2010 .ClientConfigEditor-prop-panel,
+body.app-theme-vs2010 .ClientConfigEditor-list-head,
+body.app-theme-vs2010 .ClientConfigEditor-main-tabs,
+body.app-theme-vs2010 .ClientConfigEditor-site-tabs,
+body.app-theme-vs2010 .ClientConfigEditor-prop-scroll,
+body.app-theme-vs2010 .ClientConfigEditor-empty-panel {
+  background: var(--classic-panel);
+  border-color: var(--classic-border);
+  color: var(--classic-ink);
+}
+
+body.app-theme-vs2010 .ClientConfigEditor-main-tabs,
+body.app-theme-vs2010 .ClientConfigEditor-site-tabs,
+body.app-theme-vs2010 .ClientConfigEditor-list-head {
+  border-color: var(--classic-ctrl-border);
+}
+
+body.app-theme-vs2010 .ClientConfigEditor-main-tab-btn,
+body.app-theme-vs2010 .ClientConfigEditor-site-tab-btn,
+body.app-theme-vs2010 .ClientConfigEditor-file-action-btn,
+body.app-theme-vs2010 .ClientConfigEditor-icon-btn {
+  background: var(--classic-ctrl-bg);
+  border-color: var(--classic-ctrl-border);
+  color: var(--classic-ctrl-text);
+}
+
+body.app-theme-vs2010 .ClientConfigEditor-list-row.active,
+body.app-theme-vs2010 .ClientConfigEditor-site-grid-row.active {
+  background: var(--classic-accent-soft);
+  border-color: var(--classic-accent);
+  color: var(--classic-strong);
+}
+
+body.app-theme-vs2010 .ClientConfigEditor-list-row,
+body.app-theme-vs2010 .ClientConfigEditor-site-grid-row {
+  background: var(--classic-panel);
+  color: var(--classic-ink);
+}
+
+body.app-theme-vs2010 .ClientConfigEditor-list-row:hover,
+body.app-theme-vs2010 .ClientConfigEditor-site-grid-row:hover {
+  background: var(--classic-row-hover);
+  border-color: var(--classic-accent);
+}
+
+body.app-theme-vs2010 .ClientConfigEditor-site-grid-head span + span,
+body.app-theme-vs2010 .ClientConfigEditor-site-grid-row span + span {
+  border-color: var(--classic-border);
+}
+
+body.app-theme-vs2010 .ClientConfigEditor-separator {
+  background: var(--classic-border);
+}
+
+body.app-theme-vs2010 .ClientConfigEditor-prop-category {
+  background: var(--classic-accent-soft);
+  color: var(--classic-strong);
+}
+
+body.app-theme-office2019darkgray .ClientConfigEditor-left-panel,
+body.app-theme-office2019darkgray .ClientConfigEditor-prop-panel,
+body.app-theme-office2019darkgray .ClientConfigEditor-list-head,
+body.app-theme-office2019darkgray .ClientConfigEditor-main-tabs,
+body.app-theme-office2019darkgray .ClientConfigEditor-site-tabs,
+body.app-theme-office2019darkgray .ClientConfigEditor-prop-scroll,
+body.app-theme-office2019darkgray .ClientConfigEditor-empty-panel {
+  background: var(--classic-panel);
+  border-color: var(--classic-border);
+  color: var(--classic-ink);
+}
+
+body.app-theme-office2019darkgray .ClientConfigEditor-main-tabs,
+body.app-theme-office2019darkgray .ClientConfigEditor-site-tabs,
+body.app-theme-office2019darkgray .ClientConfigEditor-list-head {
+  border-color: var(--classic-ctrl-border);
+}
+
+body.app-theme-office2019darkgray .ClientConfigEditor-main-tab-btn,
+body.app-theme-office2019darkgray .ClientConfigEditor-site-tab-btn,
+body.app-theme-office2019darkgray .ClientConfigEditor-file-action-btn,
+body.app-theme-office2019darkgray .ClientConfigEditor-icon-btn {
+  background: var(--classic-ctrl-bg);
+  border-color: var(--classic-ctrl-border);
+  color: var(--classic-ctrl-text);
+}
+
+body.app-theme-office2019darkgray .ClientConfigEditor-list-row.active,
+body.app-theme-office2019darkgray .ClientConfigEditor-site-grid-row.active {
+  background: var(--classic-accent-soft);
+  border-color: var(--classic-accent);
+  color: var(--classic-strong);
+}
+
+body.app-theme-office2019darkgray .ClientConfigEditor-list-row,
+body.app-theme-office2019darkgray .ClientConfigEditor-site-grid-row {
+  background: var(--classic-panel);
+  color: var(--classic-ink);
+}
+
+body.app-theme-office2019darkgray .ClientConfigEditor-list-row:hover,
+body.app-theme-office2019darkgray .ClientConfigEditor-site-grid-row:hover {
+  background: var(--classic-row-hover);
+  border-color: var(--classic-accent);
+}
+
+body.app-theme-office2019darkgray .ClientConfigEditor-site-grid-head span + span,
+body.app-theme-office2019darkgray .ClientConfigEditor-site-grid-row span + span {
+  border-color: var(--classic-border);
+}
+
+body.app-theme-office2019darkgray .ClientConfigEditor-separator {
+  background: var(--classic-border);
+}
+
+body.app-theme-office2019darkgray .ClientConfigEditor-prop-category {
+  background: var(--classic-accent-soft);
+  color: var(--classic-strong);
+}
+
+body.app-theme-office2019darkgray .ClientConfigEditor-site-grid-empty {
+  color: #dfdfdf;
+}
+
+body.app-theme-office2019darkgray .file-list li button {
+  background: #6a6a6a;
+  border-color: #4a4a4a;
+  color: #ffffff;
+}
+
+body.app-theme-office2019darkgray .file-list li button small {
+  color: #dfdfdf;
+}
+
+body.app-theme-office2019darkgray .file-list li button:hover:not(.active) {
+  background: #747474;
+  border-color: #565656;
+}
+
 body.app-theme-office2019darkgray .LanguageEditor-prop-row label,
 body.app-theme-office2019darkgray .MenuEditor-prop-row label,
+body.app-theme-office2019darkgray .ClientConfigEditor-prop-label,
+body.app-theme-office2019darkgray .ClientConfigEditor-site-field-row span,
+body.app-theme-office2019darkgray .LanguageEditor-prop-head h3,
+body.app-theme-office2019darkgray .MenuEditor-prop-head h3,
+body.app-theme-office2019darkgray .ClientConfigEditor-prop-head h3,
+body.app-theme-office2019darkgray .LanguageEditor-caption-head span,
+body.app-theme-office2019darkgray .LanguageEditor-message-head span,
 body.app-theme-office2019darkgray .prop-row label {
   color: #f2f2f2;
 }

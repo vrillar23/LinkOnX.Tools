@@ -1,4 +1,19 @@
 .option-backdrop {
+  --option-bg: #f5f8fc;
+  --option-border: #c7d3e3;
+  --option-ink: #1f2f44;
+  --option-label-ink: #455a74;
+  --option-help-ink: #586e8a;
+  --option-control-bg: #fdfefe;
+  --option-control-border: #bccbde;
+  --option-control-ink: #1f2f44;
+  --option-btn-bg: #e8eef7;
+  --option-btn-border: #b8c7db;
+  --option-btn-ink: #2d4868;
+  --option-primary-bg: #bed7ff;
+  --option-primary-border: #8aafde;
+  --option-primary-ink: #17385f;
+  --option-close-hover: #dbe7f6;
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.35);
@@ -9,24 +24,76 @@
 }
 
 .option-dialog {
+  position: relative;
   width: min(520px, calc(100vw - 24px));
   max-width: calc(100vw - 24px);
-  background: #fff;
+  background: var(--option-bg);
+  color: var(--option-ink);
+  border: 1px solid var(--option-border);
   border-radius: 10px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
   padding: 20px;
   box-sizing: border-box;
 }
 
+.option-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
 .option-dialog h3 {
-  margin-top: 0;
-  margin-bottom: 12px;
+  margin: 0;
+}
+
+.option-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--option-btn-border);
+  border-radius: 8px;
+  background: var(--option-btn-bg);
+  cursor: pointer;
+}
+
+.option-close-btn::before,
+.option-close-btn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--option-btn-ink);
+  transform-origin: center;
+}
+
+.option-close-btn::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.option-close-btn::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.option-close-btn:hover {
+  background: var(--option-close-hover);
+}
+
+.option-close-btn:focus-visible {
+  outline: 2px solid #4b8fd6;
+  outline-offset: 2px;
 }
 
 .option-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-  gap: 8px 12px;
+  gap: 7px 12px;
   align-items: center;
 }
 
@@ -38,6 +105,7 @@
   display: flex;
   align-items: center;
   font-weight: 600;
+  color: var(--option-label-ink);
 }
 
 .option-grid input,
@@ -45,9 +113,12 @@
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  padding: 6px 8px;
-  border: 1px solid #d0d5dd;
+  min-height: 34px;
+  padding: 4px 6px 5px;
+  border: 1px solid var(--option-control-border);
   border-radius: 6px;
+  color: var(--option-control-ink);
+  background: var(--option-control-bg);
   box-sizing: border-box;
 }
 
@@ -56,71 +127,151 @@
   height: 16px;
   padding: 0;
   border-radius: 4px;
+  accent-color: #3f78b9;
 }
 
 .option-checkbox-field {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  min-height: 34px;
+  padding: 0;
   font-weight: 500;
-  color: #334155;
+  color: var(--option-control-ink);
+}
+
+.option-field-help {
+  grid-column: 1 / -1;
+  margin: -1px 0 4px;
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--option-help-ink);
+}
+
+.option-field-help:empty {
+  display: none;
 }
 
 .option-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 16px;
+  margin-top: 18px;
 }
 
 .option-actions button {
   padding: 8px 14px;
-  border: 1px solid #d0d5dd;
+  border: 1px solid var(--option-btn-border);
   border-radius: 6px;
-  background: #f4f6fa;
+  background: var(--option-btn-bg);
+  color: var(--option-btn-ink);
   cursor: pointer;
 }
 
 .option-actions .primary {
-  background: #4364f7;
-  color: #fff;
-  border-color: #4364f7;
+  background: var(--option-primary-bg);
+  color: var(--option-primary-ink);
+  border-color: var(--option-primary-border);
 }
 
 body.app-theme-dark .option-backdrop {
   background: rgba(2, 6, 23, 0.62);
+  --option-bg: #e6edf7;
+  --option-border: #b7c7dc;
+  --option-ink: #1d2d42;
+  --option-label-ink: #38516f;
+  --option-help-ink: #4b688b;
+  --option-control-bg: #f8fbff;
+  --option-control-border: #aec2db;
+  --option-control-ink: #1d2d42;
+  --option-btn-bg: #e4ecf8;
+  --option-btn-border: #a9bfdd;
+  --option-btn-ink: #244261;
+  --option-primary-bg: #bad5ff;
+  --option-primary-border: #7ca5da;
+  --option-primary-ink: #17385f;
+  --option-close-hover: #d5e2f5;
 }
 
-body.app-theme-dark .option-dialog {
-  background: #0f1a2d;
-  border: 1px solid #31445f;
-  box-shadow: 0 16px 36px rgba(2, 6, 23, 0.5);
+body.app-theme-vs2010 .option-backdrop {
+  --option-bg: #edf2f9;
+  --option-border: #a6b6ce;
+  --option-ink: #223551;
+  --option-label-ink: #3f587b;
+  --option-help-ink: #526a8c;
+  --option-control-bg: #f8fbff;
+  --option-control-border: #98adc9;
+  --option-control-ink: #223551;
+  --option-btn-bg: #e4ebf6;
+  --option-btn-border: #96acc8;
+  --option-btn-ink: #2a4468;
+  --option-primary-bg: #d4e4fb;
+  --option-primary-border: #89a6cc;
+  --option-primary-ink: #1f3d65;
+  --option-close-hover: #d9e4f4;
 }
 
-body.app-theme-dark .option-dialog h3,
-body.app-theme-dark .option-grid label {
-  color: #dbe7ff;
+body.app-theme-sevenclassic .option-backdrop {
+  --option-bg: #f6f6f6;
+  --option-border: #c8ced5;
+  --option-ink: #2d3743;
+  --option-label-ink: #4a5768;
+  --option-help-ink: #607080;
+  --option-control-bg: #ffffff;
+  --option-control-border: #bac2cb;
+  --option-control-ink: #2d3743;
+  --option-btn-bg: #eef1f4;
+  --option-btn-border: #b9c0c9;
+  --option-btn-ink: #3a4b5f;
+  --option-primary-bg: #d8ebf8;
+  --option-primary-border: #8fb3c7;
+  --option-primary-ink: #2e4f63;
+  --option-close-hover: #e2ebf2;
 }
 
-body.app-theme-dark .option-grid input,
-body.app-theme-dark .option-grid select {
-  background: #0c172b;
-  color: #dbe7ff;
-  border-color: #31445f;
+body.app-theme-office2013gray .option-backdrop {
+  --option-bg: #edf2f8;
+  --option-border: #b1bfd4;
+  --option-ink: #223652;
+  --option-label-ink: #425b7d;
+  --option-help-ink: #587298;
+  --option-control-bg: #fbfdff;
+  --option-control-border: #a2b7d4;
+  --option-control-ink: #223652;
+  --option-btn-bg: #e4ebf7;
+  --option-btn-border: #9fb6d5;
+  --option-btn-ink: #2a4f80;
+  --option-primary-bg: #d3e1f7;
+  --option-primary-border: #88a5cb;
+  --option-primary-ink: #1f4475;
+  --option-close-hover: #d8e4f4;
 }
 
-body.app-theme-dark .option-checkbox-field {
-  color: #dbe7ff;
+body.app-theme-office2019darkgray .option-backdrop {
+  --option-bg: #666666;
+  --option-border: #3f3f3f;
+  --option-ink: #f2f6ff;
+  --option-label-ink: #eef3ff;
+  --option-help-ink: #d8e0ed;
+  --option-control-bg: #5a5a5a;
+  --option-control-border: #3a3a3a;
+  --option-control-ink: #f4f7ff;
+  --option-btn-bg: #6d6d6d;
+  --option-btn-border: #3b3b3b;
+  --option-btn-ink: #f4f7ff;
+  --option-primary-bg: #3c5e8e;
+  --option-primary-border: #2e4870;
+  --option-primary-ink: #f8fbff;
+  --option-close-hover: #797979;
 }
 
-body.app-theme-dark .option-actions button {
-  background: #172741;
-  border-color: #31445f;
-  color: #dbe7ff;
-}
+@media (max-width: 560px) {
+  .option-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
 
-body.app-theme-dark .option-actions .primary {
-  background: #2563eb;
-  border-color: #2563eb;
-  color: #fff;
+  .option-field-help {
+    margin: -1px 0 6px;
+  }
 }
