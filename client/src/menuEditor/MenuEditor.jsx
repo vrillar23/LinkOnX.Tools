@@ -67,10 +67,10 @@ const PROPERTY_META = {
   MC: { label: "Caption", category: "Menu" },
   MD: { label: "Description", category: "Menu" },
   TP: { label: "Form Title Prefix", category: "Menu" },
-  CN: { label: "Form Name", category: "Menu" },
+  CN: { label: "Form Name", category: "Assembly" },
   UF: { label: "User Function", category: "Menu" },
   CH: { label: "Cast Channel", category: "Menu" },
-  PT: { label: "Parameters", category: "Menu" },
+  PT: { label: "Parameters", category: "Assembly" },
   AMF: { label: "Allow Multiple Forms", category: "Menu" },
   PC: { label: "Caption", category: "Menu" },
   PD: { label: "Description", category: "Menu" },
@@ -376,13 +376,17 @@ export function MenuEditor() {
   const onChangeProperty = useCallback((row, value) => {
     if (!row || row.readOnly || row.key === "__type" || !selectedNodeId) return;
 
-    setTreeRoot((prev) => updateNodeById(prev, selectedNodeId, (node) => ({
-      ...node,
-      attributes: {
+    setTreeRoot((prev) => updateNodeById(prev, selectedNodeId, (node) => {
+      const nextAttributes = {
         ...(node.attributes || {}),
         [row.key]: value,
-      },
-    })));
+      };
+      applyTagPropertyRules(node.tag, nextAttributes);
+      return {
+        ...node,
+        attributes: nextAttributes,
+      };
+    }));
     setIsDirty(true);
   }, [selectedNodeId]);
 
@@ -1675,6 +1679,8 @@ function buildPropertyRows(node) {
   const preferredKeys = NODE_PROPERTY_KEYS_BY_TAG[tag] || [];
   const keys = buildOrderedPropertyKeys(preferredKeys, Object.keys(attributes || {}));
   for (const key of keys) {
+    if (!isPropertyVisibleForTag(tag, key, attributes)) continue;
+
     const hasAttribute = Object.prototype.hasOwnProperty.call(attributes, key);
     const value = String(hasAttribute ? attributes[key] ?? "" : resolvePropertyDefaultValue(key));
     const meta = PROPERTY_META[key] || getFallbackMeta(key);
@@ -1684,7 +1690,7 @@ function buildPropertyRows(node) {
       label: meta.label,
       category: meta.category,
       value,
-      readOnly: Boolean(meta.readOnly),
+      readOnly: isPropertyReadOnlyForTag(tag, key, attributes, meta),
       multiline: MULTILINE_KEYS.has(key) || value.length >= 140,
       options: ENUM_VALUE_OPTIONS[key] || (BOOLEAN_VALUE_KEYS.has(key) ? BOOLEAN_VALUE_OPTIONS : null),
       isImage: key === "MI" || key === "ML",
@@ -1710,6 +1716,64 @@ function buildPropertyRows(node) {
   }
 
   return rows;
+}
+
+function applyTagPropertyRules(tag, attributes) {
+  const tagText = String(tag || "").toUpperCase();
+  if (tagText !== "PIT" || !attributes) return;
+
+  const behavior = normalizePopupBehavior(attributes.PB);
+  if (behavior === "Link") {
+    attributes.PP = "Menu";
+    attributes.PU = "";
+  }
+
+  const permission = normalizePopupPermission(attributes.PP);
+  if (permission !== "Menu") {
+    attributes.PL = "";
+  }
+}
+
+function isPropertyVisibleForTag(tag, key, attributes) {
+  const tagText = String(tag || "").toUpperCase();
+  const keyText = String(key || "").toUpperCase();
+  if (tagText !== "PIT") return true;
+
+  const behavior = normalizePopupBehavior(attributes?.PB);
+  const permission = resolveEffectivePopupPermission(attributes);
+
+  if (keyText === "PU") return behavior !== "Link";
+  if (keyText === "PL") return permission === "Menu";
+  return true;
+}
+
+function isPropertyReadOnlyForTag(tag, key, attributes, meta) {
+  if (meta?.readOnly) return true;
+
+  const tagText = String(tag || "").toUpperCase();
+  const keyText = String(key || "").toUpperCase();
+  if (tagText === "PIT" && keyText === "PP") {
+    return normalizePopupBehavior(attributes?.PB) === "Link";
+  }
+
+  return false;
+}
+
+function normalizePopupBehavior(value) {
+  const text = String(value ?? "").trim();
+  return text === "Link" ? "Link" : "Custom";
+}
+
+function normalizePopupPermission(value) {
+  const text = String(value ?? "").trim();
+  if (text === "Menu") return "Menu";
+  if (text === "Caller") return "Caller";
+  return "None";
+}
+
+function resolveEffectivePopupPermission(attributes) {
+  if (normalizePopupBehavior(attributes?.PB) === "Link") return "Menu";
+  return normalizePopupPermission(attributes?.PP);
 }
 
 function buildOrderedPropertyKeys(preferredKeys, actualKeys) {

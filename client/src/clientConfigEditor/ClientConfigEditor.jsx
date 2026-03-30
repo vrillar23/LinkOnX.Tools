@@ -40,7 +40,15 @@ const makeTab = (id, alias, defaults = {}) => ({
   groups: [
     { title: "[01] Middleware", fields: [{ key: "messageBroker", label: "Message Broker", type: "enum", options: MESSAGE_BROKER_OPTIONS, aliases: [alias.mb], defaultValue: "ActiveMQ" }, { key: "connectionString", label: "Connection String", type: "text", aliases: [alias.cs], defaultValue: defaults.cs ?? "tcp://localhost:61616" }, { key: "timeout", label: "Timeout (sec)", type: "number", aliases: [alias.tc], defaultValue: defaults.tc ?? "30000" }] },
     { title: "[02] Channel", fields: [{ key: "tuneChannelId", label: "Tune Channel", type: "text", aliases: [alias.ti], defaultValue: defaults.ti ?? "" }, { key: "castChannelId", label: "Cast Channel", type: "text", aliases: [alias.cc], defaultValue: defaults.cc ?? "" }] },
-    { title: "[03] Ftp", fields: [{ key: "ftpIp", label: "IP", type: "text", aliases: [alias.fi], defaultValue: defaults.fi ?? "localhost" }, { key: "ftpAnonymous", label: "Used Anonymous", type: "bool", options: BOOL_OPTIONS, aliases: [alias.ua], defaultValue: "True" }, { key: "ftpUserId", label: "User ID", type: "text", aliases: [alias.fu], defaultValue: defaults.fu ?? "anonymous", visibleWhen: FTP_VISIBLE }] },
+    {
+      title: "[03] Ftp",
+      fields: [
+        { key: "ftpIp", label: "IP", type: "text", aliases: [alias.fi], defaultValue: defaults.fi ?? "localhost" },
+        { key: "ftpAnonymous", label: "Used Anonymous", type: "bool", options: BOOL_OPTIONS, aliases: [alias.ua], defaultValue: "True" },
+        { key: "ftpUserId", label: "User ID", type: "text", aliases: [alias.fu], defaultValue: defaults.fu ?? "anonymous", visibleWhen: FTP_VISIBLE },
+        { key: "ftpPassword", label: "Password", type: "password", aliases: [alias.fp], defaultValue: "", visibleWhen: FTP_VISIBLE },
+      ],
+    },
   ],
 });
 
@@ -52,7 +60,15 @@ const SITE_TABS = [
       { title: "[01] Middleware", fields: [{ key: "messageBroker", label: "Message Broker", type: "enum", options: MESSAGE_BROKER_OPTIONS, aliases: ["BSMB"], defaultValue: "ActiveMQ" }, { key: "connectionString", label: "Connection String", type: "text", aliases: ["BSCS"], defaultValue: "tcp://localhost:61616" }, { key: "timeout", label: "Timeout (sec)", type: "number", aliases: ["BSTO"], defaultValue: "30000" }] },
       { title: "[02] Channel", fields: [{ key: "tuneChannelId", label: "Tune Channel", type: "text", aliases: ["BSTC"], defaultValue: "/LON/BISLOC" }, { key: "castChannelId", label: "Cast Channel", type: "text", aliases: ["BSCC"], defaultValue: "/LON/LOCBIS" }] },
       { title: "[03] User Validation", fields: [{ key: "externalUserValidation", label: "External User Validation", type: "bool", options: BOOL_OPTIONS, aliases: ["BSUV"], defaultValue: "False" }] },
-      { title: "[04] Ftp", fields: [{ key: "ftpIp", label: "IP", type: "text", aliases: ["BSFI"], defaultValue: "localhost" }, { key: "ftpAnonymous", label: "Used Anonymous", type: "bool", options: BOOL_OPTIONS, aliases: ["BSUA"], defaultValue: "True" }, { key: "ftpUserId", label: "User ID", type: "text", aliases: ["BSFU"], defaultValue: "anonymous", visibleWhen: FTP_VISIBLE }] },
+      {
+        title: "[04] Ftp",
+        fields: [
+          { key: "ftpIp", label: "IP", type: "text", aliases: ["BSFI"], defaultValue: "localhost" },
+          { key: "ftpAnonymous", label: "Used Anonymous", type: "bool", options: BOOL_OPTIONS, aliases: ["BSUA"], defaultValue: "True" },
+          { key: "ftpUserId", label: "User ID", type: "text", aliases: ["BSFU"], defaultValue: "anonymous", visibleWhen: FTP_VISIBLE },
+          { key: "ftpPassword", label: "Password", type: "password", aliases: ["BSFP"], defaultValue: "", visibleWhen: FTP_VISIBLE },
+        ],
+      },
     ],
   },
   makeTab("EMS", { mb: "EMB", cs: "ECS", tc: "ETO", ti: "ETC", cc: "ECC", fi: "EFI", ua: "EUA", fu: "EFU", fp: "EFP" }, { ti: "/LON/EMSLOC", cc: "/LON/LOCEMS" }),
@@ -67,7 +83,15 @@ const SITE_TABS = [
       { title: "[01] Middleware", fields: [{ key: "messageBroker", label: "Message Broker", type: "enum", options: MESSAGE_BROKER_OPTIONS, aliases: ["EEMB", "NMB"], defaultValue: "ActiveMQ" }, { key: "connectionString", label: "Connection String", type: "text", aliases: ["EECS", "NCS"], defaultValue: "tcp://localhost:61616" }, { key: "timeout", label: "Timeout (sec)", type: "number", aliases: ["EETO", "NTC"], defaultValue: "30000" }] },
       { title: "[02] Mns", fields: [{ key: "mnsTuneChannelId", label: "Mns Tune Channel", type: "text", aliases: ["EETC", "MNS1"], defaultValue: "/NON/MNSNOC" }, { key: "mnsCastChannelId", label: "Mns Cast Channel", type: "text", aliases: ["EECC", "MNS2"], defaultValue: "/NON/NOCMNS" }] },
       { title: "[03] Nds", fields: [{ key: "ndsTuneChannelId", label: "Nds Tune Channel", type: "text", aliases: ["NDTC", "NDS1"], defaultValue: "/NON/NDSNOC" }, { key: "ndsCastChannelId", label: "Nds Cast Channel", type: "text", aliases: ["NDCC", "NDS2"], defaultValue: "/NON/NOCNDS" }] },
-      { title: "[04] Ftp", fields: [{ key: "ftpIp", label: "IP", type: "text", aliases: ["EEFI"], defaultValue: "localhost" }, { key: "ftpAnonymous", label: "Used Anonymous", type: "bool", options: BOOL_OPTIONS, aliases: ["EEUA"], defaultValue: "True" }, { key: "ftpUserId", label: "User ID", type: "text", aliases: ["EEFU"], defaultValue: "anonymous", visibleWhen: FTP_VISIBLE }] },
+      {
+        title: "[04] Ftp",
+        fields: [
+          { key: "ftpIp", label: "IP", type: "text", aliases: ["EEFI"], defaultValue: "localhost" },
+          { key: "ftpAnonymous", label: "Used Anonymous", type: "bool", options: BOOL_OPTIONS, aliases: ["EEUA"], defaultValue: "True" },
+          { key: "ftpUserId", label: "User ID", type: "text", aliases: ["EEFU"], defaultValue: "anonymous", visibleWhen: FTP_VISIBLE },
+          { key: "ftpPassword", label: "Password", type: "password", aliases: ["EEFP"], defaultValue: "", visibleWhen: FTP_VISIBLE },
+        ],
+      },
     ],
   },
   makeTab("RPS", { mb: "RP0", cs: "RP1", tc: "RP2", ti: "RP3", cc: "RP4", fi: "RP5", ua: "RP6", fu: "RP7", fp: "RP8" }, { ti: "/LON/RPSLOC", cc: "/LON/LOCRPS" }),
@@ -225,7 +249,18 @@ export function ClientConfigEditor() {
       setValueByAliases(attrs, SITE_FIELD_ALIASES.description, String(siteDraft.description || "").trim());
       for (const tab of SITE_TABS) {
         const values = siteDraft.services?.[tab.id] || {};
-        for (const group of tab.groups || []) for (const field of group.fields || []) setValueByAliases(attrs, field.aliases || [], normalizeFieldValue(field, values[field.key]));
+        for (const group of tab.groups || []) for (const field of group.fields || []) {
+          const normalized = normalizeFieldValue(field, values[field.key]);
+          const isPassword = String(field?.type || "").toLowerCase() === "password";
+          const hasExistingPassword = isPassword && (field.aliases || []).some((alias) => {
+            if (!Object.prototype.hasOwnProperty.call(attrs, alias)) return false;
+            return String(attrs[alias] ?? "").trim().length > 0;
+          });
+          if (isPassword && !String(normalized ?? "").trim() && hasExistingPassword) {
+            continue;
+          }
+          setValueByAliases(attrs, field.aliases || [], normalized);
+        }
       }
       let siteRows = prev.siteRows.map((row) => (row.id === targetId ? { ...row, attrs } : row));
       if (!matched) siteRows = [...siteRows, { id: targetId, attrs }];
@@ -304,7 +339,7 @@ function PropertyRow({ field, value, onChange }) {
       {type === "enum" || type === "yesno" || type === "bool" ? (
         <select className="ClientConfigEditor-prop-input" value={String(value ?? "")} onChange={(event) => onChange(event.target.value)}>{options.map((option) => <option key={`${field.key}-${option}`} value={option}>{option}</option>)}</select>
       ) : (
-        <input className="ClientConfigEditor-prop-input" type={type === "number" ? "number" : "text"} step={type === "number" ? "any" : undefined} value={String(value ?? "")} onChange={(event) => onChange(event.target.value)} spellCheck={false} />
+        <input className="ClientConfigEditor-prop-input" type={type === "number" ? "number" : (type === "password" ? "password" : "text")} step={type === "number" ? "any" : undefined} value={String(value ?? "")} onChange={(event) => onChange(event.target.value)} spellCheck={false} />
       )}
     </label>
   );
@@ -341,7 +376,13 @@ function createDraftFromSiteAttrs(attrs) {
   draft.description = getValueByAliases(attrs, SITE_FIELD_ALIASES.description, "");
   for (const tab of SITE_TABS) {
     const values = { ...(draft.services[tab.id] || {}) };
-    for (const group of tab.groups || []) for (const field of group.fields || []) values[field.key] = normalizeFieldValue(field, getValueByAliases(attrs, field.aliases, field.defaultValue ?? ""));
+    for (const group of tab.groups || []) for (const field of group.fields || []) {
+      if (String(field?.type || "").toLowerCase() === "password") {
+        values[field.key] = "";
+      } else {
+        values[field.key] = normalizeFieldValue(field, getValueByAliases(attrs, field.aliases, field.defaultValue ?? ""));
+      }
+    }
     draft.services[tab.id] = values;
   }
   return draft;
@@ -455,6 +496,10 @@ function normalizeLegacySiteAttrs(attrs) {
   if (hasAttr(attrs, "RPFU") && (!hasAttr(attrs, "RP7") || !String(attrs.RP7 || "").trim())) {
     attrs.RP7 = String(attrs.RPFU ?? "");
     delete attrs.RPFU;
+  }
+  if (hasAttr(attrs, "RPFP") && (!hasAttr(attrs, "RP8") || !String(attrs.RP8 || "").trim())) {
+    attrs.RP8 = String(attrs.RPFP ?? "");
+    delete attrs.RPFP;
   }
 
   // If RP6 contains a numeric timeout (legacy bug), move it to RP2 and reset RP6 to a valid boolean.
